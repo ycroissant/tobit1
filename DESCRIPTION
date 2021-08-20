@@ -1,0 +1,17 @@
+Package: tobit1
+Version: 0.1-1
+Date: 2021-07-02
+Title: Estimators for zero left-truncated response
+Authors@R: person("Yves", "Croissant", role = c("aut", "cre"), email = "yves.croissant@univ-reunion.fr")
+Depends: R (>= 4.0.0)
+Imports: numDeriv, tibble, Rdpack, texreg
+Suggests: knitr, rmarkdown, testthat, AER, censReg, cmtest, tidyverse, methods
+Description: Estimation of zero left-truncated models on censored or truncated samples using linear models, maximum likelihood, two-steps estimators, non-linear least squares and symetrically trimmed estimators.
+Encoding: UTF-8
+License: GPL (>=2)
+URL: https://www.r-project.org
+VignetteBuilder: knitr
+RoxygenNote: 7.1.1
+Roxygen: list(markdown = TRUE)
+LazyData: true
+RdMacros: Rdpack

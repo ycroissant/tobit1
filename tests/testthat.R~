@@ -1,0 +1,3 @@
+library("zerotrunc")
+library("testthat")
+test_check("zerotrunc")

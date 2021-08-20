@@ -1,0 +1,176 @@
+---
+title: "Using the tobit1 package with the charitable data set"
+output: 
+  bookdown::pdf_document2
+toc: false
+bibliography: ../inst/REFERENCES.bib
+vignette: >
+  %\VignetteIndexEntry{Using the tobit1 package with the charitable data set}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+We'll reproduce here some results obtained by @WILH:08 using a data
+set which deals with charitable giving. The data set is shiped with
+the `tobit1` package and can be accessed as soon as this package is
+attached.
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE, out.width = "100%",
+                      fig.align = "center", cache = FALSE, echo = TRUE)
+options(knitr.table.format = "latex", knitr.booktabs = TRUE)
+```
+
+```{r }
+library("tobit1")
+library("tidyverse")
+```
+
+```{r }
+charitable %>% print(n = 5)
+```
+
+The response is called `donation`, it measures annual charitable
+givings in $US. This variable is left-censored for the value of 25, as
+this value corresponds to the item "less than 25 $US
+donation". Therefore, for this value, we have households who didn't
+make any charitable giving and some which made a small giving (from 1
+to 24 $US).
+
+The covariates used are the donation made by the parents
+(`donparents`), two factors indicating the educational level and
+religious beliefs (respectively `education` and `religion`), annual
+income (`income`) and two dummies for living in the south (`south`)
+and for married couples (`married`). 
+
+@WILH:08 consider the value of the donation in logs and substract $\ln
+25$, so that the response is 0 for households who gave no donation or
+a small donation.
+
+
+```{r }
+charitable <- charitable %>% mutate(logdon = log(donation) - log(25))
+```
+
+The tobit model can be estimated by maximum likelihood using
+`AER::tobit`, `censReg::censReg` or with the `tobit1` package. 
+
+
+```{r }
+library("AER")
+library("censReg")
+char_form <- logdon ~ log(donparents) + log(income) +
+    education + religion + married + south
+ml_aer <- tobit(char_form, data = charitable)
+ml_creg <- censReg(char_form, data = charitable)
+ml_tb1 <- tobit1(char_form, data = charitable)
+```
+
+`tobit1` provide a rich set of estimation methods, especially the
+**SCLS** (symetrically censored least squares) estimator proposed by
+@POWE:86. We also, for pedagogical purposes, estimate the ols
+estimator although it is known to be unconsistent.
+
+
+```{r }
+scls <- update(ml_tb1, method = "trimmed")
+ols <- update(ml_tb1, method = "lm")
+```
+
+The results of the three models are presented in table
+\@ref(tab:models).
+
+
+```{r results, results = 'asis'}
+texreg::texreg(list("OLS" = ols, "maximum likehihood" = ml_tb1, "SCLS" = scls),
+               caption = "Estimation of charitable giving models",
+               label = "tab:models", single.row = TRUE, digits = 3)
+```
+
+The last two columns of table \@ref(tab:models) match exactly the
+first two columns of [@WILH:08, table 3 page 577]. Note that the OLS
+estimators are all lower in absolute values than those of the two
+other estimators, which illustrate the fact that OLS estimators are
+biased toward zero when the response is censored. The maximum
+likelihood is consistent and asymtotically efficient if the
+conditional distribution of $y^*$ (the latent variable) is
+homoscedastic and normal. The **SCLS** estimator consistency relies
+only the hypothesis that the errors are symetrical around 0. However,
+if they are also normal and homoscedastic, it is less efficient than
+the maximum likelihood estimator. Therefore, the strong distributional
+hypothesis of the maximum likelihood estimator can be adressed using a
+Hausman test:
+
+
+```{r }
+coefs_scls <- coef(scls)[-1]
+nms_coefs <- names(coefs_scls)
+coefs_ml <- coef(ml_tb1)[nms_coefs]
+delta <- coefs <- coefs_scls - coefs_ml
+V <- vcov(scls)[nms_coefs, nms_coefs] - vcov(ml_tb1)[nms_coefs, nms_coefs]
+stat_hausman <- as.numeric(crossprod(solve(V, delta), delta))
+pval_hausman <- pchisq(stat_hausman, df = length(delta), lower.tail = FALSE)
+c(stat = stat_hausman, pval = pval_hausman)
+```
+
+Specification tests for the maximum likelihood can also be conducted
+using conditional moments tests. This can easily be done using the
+`cmtest::cmtest` function, which can take as input a model fitted by
+either `AER::tobit`, `censReg::censReg` or `tobit1::tobit1`:
+
+
+```{r }
+library("cmtest")
+cmtest(ml_tb1)
+```
+
+```{r include = FALSE}
+cmtest(ml_aer)
+cmtest(ml_creg)
+```
+
+`cmtest` has a `test` argument with default value equal to
+`normality`. To get a heteroscedasticity test, we would use:
+
+```{r }
+cmtest(ml_tb1, test = "heterosc")
+```
+Normality and heteroscedasticity are strongly rejected. The values are
+different from @WILH:08 as he used the "outer product of the gradient"
+form of the test. These versions of the test can be obtained by
+setting the `OPG` argument to `TRUE`.
+
+```{r }
+cmtest(ml_tb1, test = "normality", OPG = TRUE)
+cmtest(ml_tb1, test = "heterosc", OPG = TRUE)
+```
+
+Non-normality can be further investigate by testing separately
+the fact that the skewness and kurtosis indicators are respectively
+different from 0 and 3.
+
+```{r }
+cmtest(ml_tb1, test = "skewness")
+cmtest(ml_tb1, test = "kurtosis")
+```
+The hypothesis that the conditional distribution of the response is
+mesokurtic is not rejected at the 1% level and the main problem seems
+to be the asymetry of the distribution, even after taking the
+logarithm of the response. 
+
+This can be illustrated (see figure\@ref(fig:histnorm)) by plotting the
+(unconditional) distribution of the response (for positive values) and
+adding to the histogram the normal density curve.
+
+
+```{r histnorm, fig.cap = "Empirical distribution of the response and normal approximation"}
+moments <- charitable %>% filter(logdon > 0) %>% summarise(mu = mean(logdon), sigma = sd(logdon))
+ggplot(filter(charitable, logdon > 0), aes(logdon)) +
+    geom_histogram(aes(y = ..density..), color = "black", fill = "white", bins = 10) +
+    geom_function(fun = dnorm, args = list(mean = moments$mu, sd = moments$sigma)) +
+    labs(x = "log of charitable giving", y = NULL)
+```
+
+
+
+# References

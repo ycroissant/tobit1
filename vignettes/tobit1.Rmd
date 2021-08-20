@@ -1,0 +1,444 @@
+---
+title: zerotrunc, an R Package for Estimating tobit models on truncated or on censored samples
+author: Yves Croissant
+date: 2021/03/10
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+  pdf_document:
+    number_sections: true
+vignette: >
+  %\VignetteEncoding{UTF-8}
+  %\VignetteIndexEntry{zerotrunc: an R package for tobit models}
+  %\VignetteEngine{knitr::rmarkdown}
+---
+
+# Modèle censuré
+
+## Version brute
+
+$$
+\ln L(\beta, \sigma) = 
+\sum_{n = 1} ^ {N_0} \ln \Phi \left(- \beta ^ \top x_n / \sigma\right) -
+\frac{N_1}{2} \ln 2\pi - N_1\ln \sigma -
+\frac{1}{2}\sum_{n = N_0 + 1}^{N} \left(\frac{y_n -\beta^\top x_n}{\sigma}\right) ^ 2
+$$
+
+$$
+\mu_n = \mu\left(-\beta ^ \top x_n / \sigma\right)
+$$
+
+$$
+\left\{
+\begin{array}{rcl}
+\displaystyle\frac{\partial \ln L}{\partial \beta} &=& \displaystyle
+\frac{1}{\sigma ^ 2}\left[\sum_{n = N_0 + 1}^{N} (y_n - \beta ^ \top
+x_n)x_n- \sigma \sum_{n = 1} ^ {N_0} \mu_n x_n\right]\\
+\displaystyle\frac{\partial \ln L}{\partial \sigma} &=&  \displaystyle
+- \frac{1}{\sigma ^ 3}
+\left[N_1 \sigma ^ 2 - \sum_{n=N_0 + 1} ^ N (y_n - \beta ^ \top x_n) ^ 2- \sigma \sum_{n = 1} ^ {N_0}\mu_n
+\beta ^ \top x_n \right]
+\end{array}
+\right.
+$$
+
+
+$$
+\left\{
+\begin{array}{rcl}
+\displaystyle\frac{\partial^2 \ln L}{\partial \beta \partial \beta ^ \top} &=&\displaystyle
+-\frac{1}{\sigma ^ 2} \sum_{n = 1}^{N_0}\mu_n\left(\mu_n -
+\beta^\top x_n/\sigma\right)x_n x_n ^ \top -
+\frac{1}{\sigma ^ 2} \sum_{n = N_0+1}^N x_n x_n ^ \top \\
+\displaystyle\frac{\partial^2 \ln L}{\partial \beta \partial \sigma} &=&\displaystyle
+\frac{1}{\sigma ^ 2}\sum_{n = 1} ^ {N_0} \mu_n\left[1 + \beta ^
+\top x_n/\sigma\left(\mu_n- \beta^\top
+x_n/\sigma\right)\right]x_n -
+\frac{2}{\sigma ^ 3} \sum_{n = N_0 + 1}^N (y_n - \beta^\top x_n)x_n\\
+\displaystyle\frac{\partial^2 \ln L}{\partial \sigma ^ 2} &=&\displaystyle
+- \frac{2}{\sigma ^ 3} \sum_{n = 1} ^ {N_0} \mu_n \beta ^ \top x_n -
+\frac{1}{\sigma ^ 4} \sum_{n = 1} ^ {N_0} \mu_n \left(\mu_n -
+\beta ^ \top x_n / \sigma\right)(\beta^\top x_n)^2 +
+\frac{N_1}{\sigma ^ 2} - 
+\frac{3}{\sigma ^ 4}\sum_{n = N_0 + 1} ^ N (y_n-\beta^\top x_n)^ 2
+\end{array}
+\right.
+$$
+
+
+## Olsen
+
+$$
+\ln L = \sum_{n = 1} ^ {N_1} \ln \Phi(-\gamma^\top x_n) -
+\frac{N_1}{2}\ln 2\pi + N_1 \ln \theta - \frac{1}{2}\sum_{n=N_0+1} ^ N 
+(\theta y - \gamma ^ \top x_n) ^ 2
+$$
+
+
+$$
+\left\{
+\begin{array}{rcl}
+\displaystyle\frac{\partial \ln L}{\partial \gamma} &=& \displaystyle
+- \sum_{n = 1} ^ {N_0} \mu_n x_n + \sum_{n = 1} (\theta y - \gamma^\top
+  x_n)x_n\\
+\displaystyle\frac{\partial \ln L}{\partial \theta} &=& \displaystyle
+\frac{N_1}{\theta} -
+  \sum_{n = N_0 + 1} ^ N (\theta y  - \gamma^\top x_n) y_n
+  \end{array}
+\right.
+$$
+
+
+$$
+\left\{
+\begin{array}{rcl}
+\displaystyle\frac{\partial ^ 2 \ln L}{\partial \gamma\partial \gamma
+^ \top} &=& \displaystyle
+- \sum_{n = 1} ^ {N_0} \mu_n (\mu_n - \gamma ^ \top x_n) x_n
+x_n^\top - \sum_{n = N_0 + 1} ^ N x_n x_n^\top\\
+\displaystyle\frac{\partial^2 \ln L}{\partial \gamma\partial \sigma}
+&=& \displaystyle
+\sum_{n = N_0+1} ^ N y_n x_n \\
+\displaystyle\frac{\partial ^ 2 \ln L}{\partial \gamma ^ 2} &=&
+\displaystyle - \frac{N_1}{\theta ^ 2} - \sum_{n = N_0 + 1} ^ N y_n ^
+2
+\end{array}
+\right.
+$$
+
+
+# Modèle tronqué
+
+## Version brute
+
+$$
+\ln L(\beta, \sigma) = - \frac{N}{2} \ln 2\pi - N\ln \sigma - \sum_n \ln
+\Phi\left(\beta ^ \top x_n / \sigma\right) - \frac{1}{2}\sum_n \left(\frac{y_n -\beta^\top x_n}{\sigma}\right) ^ 2
+$$
+
+$$
+\mu_n = \mu\left(\beta ^ \top x_n / \sigma\right)
+$$
+
+$$
+\left\{
+\begin{array}{rcl}
+\displaystyle\frac{\partial \ln L}{\partial \beta} &=& \displaystyle
+\frac{1}{\sigma ^ 2} \sum_n\left[y_n - \beta ^ \top x_n - 
+\sigma \mu_n\right]x_n\\
+\displaystyle\frac{\partial \ln L}{\partial \sigma} &=& \displaystyle
+-\frac{1}{\sigma ^ 3}
+\left[N \sigma ^ 2 - \sum_n (y_n - \beta^\top x_n) ^ 2 -
+\sigma\sum_n\mu_n\beta^\top
+x_n\right]
+\end{array}
+\right.
+$$
+
+$$
+\left\{
+\begin{array}{rcl}
+\displaystyle\frac{\partial^2 \ln L}{\partial \beta \partial \beta ^ \top} &=&\displaystyle
+\frac{1}{\sigma ^ 2}\sum_n
+\left[- 1 + \mu_n\left(\mu_n + \beta ^ \top x_n / \sigma\right)\right]x_nx_n^\top\\
+\displaystyle\frac{\partial^2 \ln L}{\partial \beta \partial \sigma} &=&\displaystyle
+-\frac{2}{\sigma ^ 3} \sum_n(y_n - \beta ^ \top x_n)x_n +
+\frac{1}{\sigma ^ 2} \sum_n \mu_n\left[1 - \frac{\beta^\top
+x_n}{\sigma}\left(\mu_n + \beta ^ \top x_n / \sigma\right) \right]\\
+\displaystyle\frac{\partial^2 \ln L}{\partial \sigma ^ 2} &=&\displaystyle
+\frac{N}{\sigma ^ 2} - \frac{3}{\sigma ^ 4} \sum_n (y_n-\beta ^ \top
+x_n) ^ 2 - \frac{2}{\sigma ^ 2} \sum_n \mu_n \left(\beta ^ \top x_n / \sigma\right) + 
+\frac{1}{\sigma ^ 2} \sum_n \mu_n \left(\mu_n + \beta^\top
+x_n/\sigma\right)
+\left(\beta ^ \top x_n / \sigma\right) ^ 2
+\end{array}
+\right.
+$$
+
+
+# Olsen
+
+
+$$
+\ln L(\gamma, \theta) = - \frac{N}{2} \ln 2\pi + N\ln \theta - \sum_n \ln
+\Phi(\gamma^\top x_n) - \frac{1}{2}\sum_n \left(\theta y_n - \gamma^\top x_n\right) ^ 2
+$$
+
+$$
+\left\{
+\begin{array}{rcl}
+\displaystyle\frac{\partial \ln L}{\partial \theta} &=&  \frac{N}{\theta} - 
+\sum_n \left(\theta y_n - \gamma^\top x_n\right) y_n \\
+\displaystyle\frac{\partial \ln L}{\partial \gamma} &=&
+ \sum_n\left[\left(\theta y_n - \gamma^\top x_n- \mu(\gamma^\top x_n)\right)\right] x_n
+\end{array}
+\right.
+$$
+
+
+$$
+\left\{
+\begin{array}{rcl}
+\displaystyle\frac{\partial^2 \ln L}{\partial \beta \partial \beta ^ \top} &=&
+\sum_n \left[ - 1 + \mu_n(\mu_n + \gamma ^ \top x_n)\right]x_n
+x_n^\top \\
+\displaystyle\frac{\partial^2 \ln L}{\partial \beta \partial \sigma} &=&
+\sum_n y_n x_n \\
+\displaystyle\frac{\partial^2 \ln L}{\partial \sigma ^ 2} &=&
+-\frac{N}{\theta^2} - \sum_n y_n ^ 2
+\end{array}
+\right.
+$$
+
+\clearpage
+
+## Olsen concentré
+
+Solve the first order condition for $\sigma$\ :
+
+$$
+\frac{\sum_n y_n ^ 2}{N} \theta ^ 2 - \frac{\sum_n (\gamma ^ \top x_n)
+y_n}{N}\theta - 1 = 0
+$$
+
+soit : $\hat{\sigma}^2_y = \frac{\sum_n y_n ^ 2}{N}$ 
+et $\rho =  \frac{\sum_n (\gamma ^ \top x_n) y_n}{N}$
+
+$$
+\hat{\sigma}^2_y \theta ^ 2 - \rho\theta - 1 = 0
+$$
+
+$$
+\Delta = \rho ^ 2 + 4 \hat{\sigma}^2_y
+$$
+
+
+$$
+\theta(\gamma) = \frac{\rho + \sqrt{\rho ^ 2 + 4
+\hat{\sigma}^2_y}}{2\hat{\sigma}_y ^ 2}
+$$
+
+Then consider the concentrated log-likelihood function\:
+
+$$
+\ln L^C(\gamma) = -\frac{N}{2} \ln 2\pi + N\ln \theta(\gamma) - \sum_n \ln
+\Phi(\gamma^\top x_n) - \frac{1}{2}\sum_n \left(\theta(\gamma)y_n -
+\gamma^\top x_n\right) ^ 2
+$$
+
+
+$$
+\frac{\partial \theta}{\partial \rho}=\frac{\theta}{\sqrt{\rho ^ 2 + 4
+\hat{\sigma}^2_y}}
+$$
+
+
+$$
+\left.\frac{\partial \ln L}{\partial \gamma}\right|_{\theta} =
+ \sum_n\left[\theta y_n -  \gamma^\top x_n - \mu(\gamma^\top x_n)
+ \right] x_n
+$$
+
+$$
+\frac{\partial \ln L}{\partial \gamma} =
+\left.\frac{\partial \ln L}{\partial \gamma}\right|_{\theta} + 
+  \frac{\partial \ln L}{\partial \theta}
+  \frac{\theta}{\sqrt{\rho ^ 2 + 4
+\hat{\sigma}^2_y}}
+\frac{\sum_n y_n x_n}{N}
+$$
+
+# Bias in the truncated and the censored estimator
+
+## Distribution and moments of a truncated standard normal deviate
+
+Let $z$ be a standard normal deviates left truncated on $c$. We
+therefore have:
+
+$$
+f^*(z) = \frac{\phi(z)}{1 - \Phi(c)} = \frac{\phi(z)}{\Phi(-c)} 
+$$
+
+$$
+\mu^* = \mbox{E}(z\mid z > c) = \int_c ^ {+\infty} z \frac{\phi(z)}{1 - \Phi(c)} dz =
+\frac{\phi(c)}{1 - \Phi(c)}  = \frac{\phi(-c)}{\Phi(-c)}
+$$
+
+$$
+\sigma^{*2} = \mbox{V}(z\mid z > c) = \int_c ^ {+\infty} z ^ 2
+\frac{\phi(z)}{1 - \Phi(c)} dz - \mu ^ {*2}  = 
+1 + c \frac{\phi(c)}{1 - \Phi(c)} - \mu ^ {*2} 
+$$
+
+
+Denoting $M(c) = \frac{\phi(c)}{1 - \Phi(c)}$ the inverse Mills ratio,
+we get:
+
+$$
+\left\{
+\begin{array}{rcl}
+\mu^* &=& M(c) \\
+\sigma^{*2} &=& 1 + c M(c) - M(c) ^ 2
+\end{array}
+\right.
+$$
+
+## Regression on the untracted sample
+
+
+On the population, we have:
+
+$$
+\left( \begin{array}{c} x \\ y \end{array} \right) \sim
+N \left( \left( \begin{array}{c} \mu_x \\ \mu_y \end{array} \right) ,
+\left(  \begin{array}{cc} \sigma_x ^ 2 & \rho \sigma_x \sigma_y \\ 
+                          \rho \sigma_x \sigma_y & \sigma_y ^ 2
+						  \end{array} \right)
+\right)
+$$
+
+$$
+\mbox{E}(x\mid y) = \mu_x + \rho \frac{\sigma_x}{\sigma_y}(y - \mu_y)
+$$
+
+
+$$
+\mbox{V}(x\mid y) = (1 - \rho ^ 2)\sigma_x ^ 2
+$$
+
+$$
+\sigma_y ^ 2 = \beta ^ 2 \sigma_x ^ 2 + \sigma_\epsilon ^ 2
+$$
+
+
+## Regression on a truncated sample
+
+$$
+y = \mu_y + \sigma_y z
+$$
+
+
+Now consider that $y$ is truncated. Denote:
+$\sigma_y^{*2}=\theta \sigma_y ^ 2$. The conditional
+distribution of $x$ is unchanged, but the marginal distribution of $y$
+is. $\sigma_y^{2*}$ is obtained using the formula of variance
+decomposition.
+
+
+$$
+\mu_x ^ * = E^*_y\left(\mbox{E}(x\mid y\right) = \mu_x + \rho
+\frac{\sigma_x}{\sigma_y}(\mu_y ^ * - \mu_y)
+$$
+
+$$
+\sigma_x^{*2} = 
+V^*_y\left(\mbox{E}(x\mid y\right) + E^*_y\left(\mbox{V}(x\mid y\right)=
+\rho ^ 2 \frac{\sigma_x ^ 2}{\sigma_y ^ 2} \sigma_y ^ {*2} + (1 - \rho
+^ 2) \sigma_x ^ 2 = 
+\sigma_x ^ 2 \left(1 - \rho ^ 2 (1 - \theta)\right)
+$$
+
+$$
+\sigma_{xy} ^ * = \mbox{cov} ^ * (x, y) = \mbox{cov} ^ *
+\left(\mbox{E}(x\mid y), y\right) = \rho \frac{\sigma_x}{\sigma_y}
+\sigma_y ^{*2} = \rho \theta\sigma_x\sigma_y
+$$
+
+$$
+y = \alpha + \beta x + \epsilon
+$$
+
+On the truncated sample, the OLS estimator converges to:
+
+$$
+\beta ^ * = \frac{\sigma_{xy} ^ *}{\sigma_{x} ^ {*2}} = \beta
+\frac{\theta}{1 - \rho ^ 2(1 - \theta)} = \lambda \beta
+$$
+
+$$
+\alpha ^ * - \alpha = (\mu_y ^ * - \mu_y) - \beta \lambda (\mu_x ^ * -
+\mu_x) + \beta (1 - \lambda) \mu_x
+$$
+
+$$
+\alpha ^ * - \alpha = (\mu_y ^ * - \mu_y)(1 - \lambda \rho ^ 2) +
+(1 - \lambda) \rho \frac{\sigma_y}{\sigma_x} \mu_x
+$$
+
+with $\lambda = \frac{\theta}{1 - \rho ^ 2(1 - \theta)}$
+
+
+## Regression on the zero-left truncated sample
+
+$y > 0 \Rightarrow z > -\frac{\mu_z}{\sigma_z}$. 
+
+$$
+\left\{
+\begin{array}{rcl}
+\mu_y^* &=& \mu_y + \sigma_y M\left(\frac{\mu_y}{\sigma_y}\right) =
+\mu_y + \sigma_y M_0\\
+\sigma_y^{*2} &=& \sigma_y^2 \left(1 - 
+M\left(\frac{\mu_y}{\sigma_y}\right) \left(\frac{\mu_y}{\sigma_y} +
+ M\left(\frac{\mu_y}{\sigma_y}\right)\right) \right) = \sigma_y ^ 2
+ \left(1 - M_0\left(\frac{\mu_y}{\sigma_y} + M_0\right)\right)
+\end{array}
+\right.
+$$
+
+
+$$
+\mu_x^* = \mu_x + \rho \sigma_x M
+$$
+
+$$
+\lambda = \frac{M_0\left(\frac{\mu_y}{\sigma_y} + M_0\right)}{1 - \rho
+^ 2 M_0\left(\frac{\mu_y}{\sigma_y} + M_0\right)}
+$$
+
+$$
+\alpha ^ * - \alpha = (1 - \lambda \rho ^ 2) \sigma_y M_0+
+(1 - \lambda) \rho \frac{\sigma_y}{\sigma_x} \mu_x
+$$
+
+## Regression on the zero-left censored sample
+
+$$
+\tilde{\mu}_y = \mbox{E}(\tilde{y}) = (1 - \Phi) \times 0 + \Phi \mu_y
+^ * = \Phi \mu_y ^ * = \Phi\left(M_0 + \frac{\mu_y}{\sigma_y}\right)
+$$
+
+$$
+\tilde{\sigma}_y ^ {2} = \mbox{E}(\tilde{y} ^ 2)  - \tilde{\mu}_y^{2} = 
+\Phi \mbox{E}(y ^ 2\mid y > 0) - \tilde{\mu}_y ^ {2} = \Phi \left(\sigma_y ^
+{*2} + \mu_y ^ {*2} \right) - \tilde{\mu}_y ^ {2}
+$$
+
+$$
+\tilde{\sigma}_y ^ {2} = \sigma_y ^  2 \Phi \left[1 - \left(\Phi
+\left(M_0 + \frac{\mu_y}{\sigma_y}\right) -
+\frac{\mu_y}{\sigma_y}\right)
+\left(M_0 + \frac{\mu_y}{\sigma_y}\right)\right]
+$$
+
+
+$$
+\tilde{\sigma}_{xy} = \mbox{E}(x\tilde{y}) - \mu_x\tilde{\mu}_y = 
+\Phi \mbox{E}(xy\mid y > 0) -  \mu_x\tilde{\mu}_y = 
+\Phi \left(\sigma_{xy} ^ * + \mu_x ^ * \mu_y ^ * \right) - \mu_x\tilde{\mu}_y
+$$
+
+
+$$
+\tilde{\sigma}_{xy} = \Phi \rho \sigma_x \sigma_y
+$$
+
+$$
+\tilde{\beta} = \Phi \beta
+$$
+
+$$
+\tilde{\alpha} = \tilde{\mu}_y - \tilde{\beta} \mu_x = \Phi (\mu_y +
+\sigma_y M) - \Phi \beta \mu_x = \Phi(\alpha + \sigma_y M)
+$$
+

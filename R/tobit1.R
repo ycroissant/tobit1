@@ -9,6 +9,10 @@
 #' @param data a data frame,
 #' @param subset a subset,
 #' @param start an optional vector of starting values
+#' @param left,right left and right limits of the dependent
+#'     variable. The default is respectively 0 and +Inf which
+#'     corresponds to the most classic (left-zero truncated) tobit
+#'     model,
 #' @param sample either `"censored"` (the default) to estimate the
 #'     censored (tobit) regression model or `"truncated"` to estimated
 #'     the truncated regression model,
@@ -35,16 +39,17 @@
 #' tobit1(fees ~ expense, feesadm, sample = "truncated")
 #' @export
 tobit1 <- function(formula, data, subset = NULL, start = NULL,
+                   left = 0, right = Inf,
                    sample = c("censored", "truncated"),
                    method = c("ml", "lm", "2steps", "trimmed", "nls"),
-                   trace = FALSE){
+                   trace = FALSE){    
     .call <- match.call()
     .method <- match.arg(method)
     .sample <- match.arg(sample)
     cl <- match.call(expand.dots = FALSE)
     m <- match(c("formula", "data", "subset"),
                names(cl), 0L)
-    
+    zerotrunc <- ifelse(left == 0 & is.infinite(right) & (right > 0), TRUE, FALSE)
     # construct the model frame and components
     cl <- cl[c(1L, m)]
     mf <- cl
@@ -54,15 +59,19 @@ tobit1 <- function(formula, data, subset = NULL, start = NULL,
     K <- ncol(X)
     y <- model.response(mf)
     N <- length(y)
+
+    # identify the truncated observations
+    P <- as.numeric(y > left & y < right)
+    Plog <- as.logical(P)
     
     # check whether the sample is censored or truncated
-    is_cens_smpl <- any(y == 0)
+    is_cens_smpl <- any(P == 0)
     if (.sample == "censored" & ! is_cens_smpl)
         stop("the tobit model requires a censored sample")
 
     if (.method != "2steps" & is_cens_smpl & .sample == "truncated"){
-        X <- X[y > 0, ]
-        y <- y[y > 0]
+        X <- X[Plog, ]
+        y <- y[Plog]
     }
 
     # compute the starting values if they are not provided
@@ -75,7 +84,7 @@ tobit1 <- function(formula, data, subset = NULL, start = NULL,
 
     # lm estimator, biased
     if (.method == "lm"){
-        if (.sample == "truncated") result <- lm(y ~ X - 1, subset = y > 0)
+        if (.sample == "truncated") result <- lm(y ~ X - 1, subset = Plog)
         else result <- lm(y ~ X - 1)
         coefs <- coef(result)
         names(coefs) <- colnames(X)
@@ -95,13 +104,12 @@ tobit1 <- function(formula, data, subset = NULL, start = NULL,
     if (.method == "2steps"){
         if (! is_cens_smpl)
             stop("2 steps estimator requires a censored sample")
-        yb <- ifelse(y > 0, 1, 0)
-        pbt <- glm(yb ~ X - 1, family = binomial(link = 'probit'))
+        pbt <- glm(P ~ X - 1, family = binomial(link = 'probit'))
         Xbs <- pbt$linear.predictor
         mls <- mills(Xbs)
         if (.sample == "truncated"){
             Z <- cbind(X, sigma = mls)
-            result <- lm(y ~ Z - 1, subset = y > 0)
+            result <- lm(y ~ Z - 1, subset = Plog)
             coefs <- coef(result)
             names(coefs) <- colnames(Z)
         }
@@ -135,6 +143,7 @@ tobit1 <- function(formula, data, subset = NULL, start = NULL,
 
     # trimmed estimator
     if (.method == "trimmed"){
+        if (! zerotrunc) stop("trimmed estimator only implemented for simple tobit")
         i <- 1
         eps <- 10
         coefs <- coefs_init[1:(length(coefs_init) - 1)]
@@ -170,6 +179,7 @@ tobit1 <- function(formula, data, subset = NULL, start = NULL,
     
     # non-linear least-squares
     if (.method == "nls"){
+        if (! zerotrunc) stop("trimmed estimator only implemented for simple tobit")
         mills <- function(x) exp(dnorm(x, log = TRUE) - pnorm(x, log.p = TRUE))
         dmills <- function(x) - mills(x) * (x + mills(x))
         d2mills <- function(x) mills(x) * ( (x + mills(x)) * (x + 2 * mills(x)) - 1)
@@ -244,8 +254,10 @@ tobit1 <- function(formula, data, subset = NULL, start = NULL,
             lnl_conv <- lnl_trunc(coefs, X = X, y = y, sum = FALSE, gradient = TRUE, hessian = TRUE)
         }
         else{
-            coefs <- newton(lnl_cens, coefs_init, trace = trace, X = X, y = y, sum = FALSE, direction = "max")
-            lnl_conv <- lnl_cens(coefs, X = X, y = y, sum = FALSE, gradient = TRUE, hessian = TRUE)
+            coefs <- newton(lnl_cens_tp, coefs_init, trace = trace, X = X, y = y, sum = FALSE,
+                            left = left, right = right, direction = "max")
+            lnl_conv <- lnl_cens_tp(coefs, X = X, y = y, sum = FALSE, gradient = TRUE, hessian = TRUE,
+                                    left = left, right = right)
         }
         .hessian <- attr(lnl_conv, "hessian")
         .gradObs <- attr(lnl_conv, "gradient")
@@ -324,6 +336,9 @@ print.summary.tobit1 <- function (x, digits = max(3, getOption("digits") - 2), w
 
 
 newton <- function(fun, coefs, trace, direction = c("min", "max"), ...){
+    if (trace){
+        cat("Initial values of the coefficients:\n")
+    }
     direction <- match.arg(direction)
     i <- 1
     eps <- 10
@@ -396,7 +411,7 @@ newton <- function(fun, coefs, trace, direction = c("min", "max"), ...){
 #' @export
 hausman <- function(x, y, omit = NULL){
     .data.name <- paste(paste(deparse(substitute(x))), "vs",
-                       paste(deparse(substitute(x))))
+                       paste(deparse(substitute(y))))
     nms_x <- names(coef(x))
     nms_y <- names(coef(y))
     nms <- intersect(nms_x, nms_y)

@@ -123,6 +123,61 @@ hess_trunc_olsen <- function(param, X, y)
 
 ## raw (unscaled) version
 
+lnl_cens_tp <- function(param, X, y, sum = TRUE, gradient = FALSE, hessian = FALSE, left = 0, right = Inf){
+    Ia <- y == left
+    Ib <- y == right
+    Io <- (y > left & y < right)
+    K <- length(param) - 1
+    N <- length(y)
+    beta <- param[1:K]
+    sig <- param[K + 1]
+    bX <- as.numeric(X %*% beta)
+    bxs <- bX / sig
+    bxs_a <- (left - bX) / sig
+    bxs_b <- (bX - right) / sig
+    e <- y - bX
+    lPhi_a <- pnorm(bxs_a, log.p = TRUE)
+    lPhi_b <- pnorm(bxs_b, log.p = TRUE)
+    mls_a <- mills(bxs_a)
+    mls_b <- mills(bxs_b)
+    dmls_a <- dmills(bxs_a)
+    dmls_b <- dmills(bxs_b)
+    if (is.infinite(left)){
+        bxs_a <- lPhi_a <- mls_a <- dmls_a <- 0
+    }
+    if (is.infinite(right)){
+        bxs_b <- lPhi_b <- mls_b <- dmls_b <- 0
+    }
+    lnl <-  Ia * lPhi_a + Ib * lPhi_b +
+        Io * (- log(sig) - 1 / 2 * log(2 * pi) - 1 / 2 * (e / sig) ^ 2)
+    if (sum) lnl <- sum(lnl)
+    if (gradient){
+        grad_beta <-  - Ia * mls_a + Ib * mls_b + Io * e / sig
+        grad_sig <- - Ia * mls_a * bxs_a - Ib * mls_b * bxs_b + Io * (e ^ 2 / sig ^ 2 - 1)
+        grad <- cbind(grad_beta * X / sig, grad_sig / sig)
+        if (sum) grad <- apply(grad, 2, sum)
+        attr(lnl, "gradient") <- grad
+    }
+    if (hessian){
+        Xo <- X[as.logical(1 - Ia - Ib), ]
+        H_bb <-  (crossprod(dmls_a[Ia] * X[Ia, ], X[Ia, ]) +
+            crossprod(dmls_b[Ib] * X[Ib, ], X[Ib, ]) -
+            crossprod(X[Io, ]))
+        H_bs <- - Ia * (- dmls_a * bxs_a - mls_a) + Ib * (- dmls_b * bxs_b - mls_b) -
+            2 * Io * e / sig
+        H_ss <- - Ia * (- dmls_a * bxs_a ^ 2  - 2 * mls_a * bxs_a) -
+                  Ib * (- dmls_b * bxs_b ^ 2  - 2 * mls_b * bxs_b) +
+                  Io * (- 3 * e ^ 2 / sig ^ 2 + 1)
+        H <- rbind(cbind(H_bb / sig ^ 2,
+                         apply(H_bs * X, 2, sum) / sig ^ 2),
+                   c(apply(H_bs * X, 2, sum) / sig ^ 2,
+                     sum(H_ss) / sig ^ 2))
+        attr(lnl, "hessian") <- H
+    }
+    lnl
+}
+    
+
 
 lnl_cens <- function(param, X, y, sum = TRUE, gradient = FALSE, hessian = FALSE){
     K <- length(param) - 1
@@ -230,6 +285,7 @@ hess_cens_olsen <- function(param, X, y)
 sc2unsc <- function(x) c(x[1:(length(x) - 1)] * x[length(x)], x[length(x)])
 unsc2sc <- function(x) c(x[1:(length(x) - 1)] / x[length(x)], x[length(x)])
 mills <- function(x) exp(dnorm(x, log = TRUE) - pnorm(x, log.p = TRUE))
+dmills <- function(x) - mills(x) * (mills(x) + x)
 
 
 trim_trunc <- function(param, X, y, sum = TRUE, gradient = FALSE, hessian = TRUE){

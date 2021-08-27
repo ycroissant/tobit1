@@ -15,6 +15,8 @@ tobit1(
   data,
   subset = NULL,
   start = NULL,
+  left = 0,
+  right = Inf,
   sample = c("censored", "truncated"),
   method = c("ml", "lm", "2steps", "trimmed", "nls"),
   trace = FALSE
@@ -45,6 +47,11 @@ tobit1(
 \item{subset}{a subset,}
 
 \item{start}{an optional vector of starting values}
+
+\item{left, right}{left and right limits of the dependent
+variable. The default is respectively 0 and +Inf which
+corresponds to the most classic (left-zero truncated) tobit
+model,}
 
 \item{sample}{either \code{"censored"} (the default) to estimate the
 censored (tobit) regression model or \code{"truncated"} to estimated

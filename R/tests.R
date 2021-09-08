@@ -59,6 +59,8 @@ haustest <- function(x, y, omit = NULL){
 #' @references
 #' \insertRef{SMIT:BLUN:86}{tobit1}
 #' @examples
+#' library("tidyverse")
+#' library("Formula")
 #' inst <- ~ sic3 + k_serv + inv + engsci + whitecol + skill + semskill + cropland + 
 #'     pasture + forest + coal + petro + minerals + scrconc + bcrconc +
 #'     scrcomp + bcrcomp + meps + 

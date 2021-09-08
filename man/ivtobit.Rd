@@ -41,7 +41,6 @@ trunctaed
 }
 \examples{
 library("Formula")
-library("tobit1")
 library("tidyverse")
 inst <- ~ sic3 + k_serv + inv + engsci + whitecol + skill + semskill + cropland + 
     pasture + forest + coal + petro + minerals + scrconc + bcrconc + scrcomp + bcrcomp + meps + 

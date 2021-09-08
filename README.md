@@ -40,4 +40,4 @@ likelihood using the `ivtobit` function.
 
 `tobit1` is not currently available on `CRAN`. Use:
 
-`remotes::install_github("ycroissant/tobit1")`
+`remotes::install_github("ycroissant/tobit1", build_vignettes = TRUE)`

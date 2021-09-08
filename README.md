@@ -25,19 +25,19 @@ response is right truncated and also for two-limits response.
 
 Specification tests are of particular interest for tobit models as the
 consistency of most estimators relies on the hypothesis of
-homoscedasticity and normality. `tobit1` provide an `hsmtest` for the
+homoscedasticity and normality. `tobit1` provide an `haustest` for the
 Hausman (1978) test and, for conditional moment tests, the `cmtest`
 can be used as it provides specific methods for `tobit1` objects.
 
 ## Endogeneity
 
 The endogeneity test of Smith and Blundell (1986) is provided as the
-`smbldtest` function. The estimation of simultaneous-equation Tobit
+`smbltest` function. The estimation of simultaneous-equation Tobit
 models can be performed using either a two-steps estimator or maximum
-likelihood.
+likelihood using the `ivtobit` function.
 
 ## Installation
 
 `tobit1` is not currently available on `CRAN`. Use:
 
-`devtools::install_github("ycroissant/tobit1")`
+`remotes::install_github("ycroissant/tobit1")`

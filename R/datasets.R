@@ -67,3 +67,51 @@ NULL
 #' \insertRef{WILH:08}{tobit1}
 #' @importFrom Rdpack reprompt
 NULL
+
+
+#' Lobying and Trade Protection
+#'
+#' Lobying from Capitalists and Unions and Trade Protection
+#'
+#' @name tradeprotection
+#' @docType data
+#' @keywords dataset
+#'
+#' @format a tibble containing:
+#' - ntb NTB coverage ratio, proportion
+#' - exports exportations
+#' - imports importations
+#' - elast demand elasticity
+#' - cap lobying
+#' - labvar labor market covariate
+#' - sic3 3-digit SIC industry classification
+#' - inv Inventories, factor share
+#' - engsci Engineers and scientists, factor share
+#' - whitecol White collar, factor share
+#' - skill Skilled, factor share
+#' - semskill Semi-skilled, factor share
+#' - cropland Cropland, factor shaer
+#' - pasture Pasture, factor share
+#' - forest Forest, factor share
+#' - coal Coal, factor share
+#' - petro Petroleum, factor share
+#' - minerals Minerals, factor share
+#' - scrconc Seller concentration
+#' - bcrconc Buyer concentration
+#' - scrcomp Seller number of firms
+#' - bcrcomp Buyer number of firms
+#' - meps Scale
+#' - kstock Capital stock
+#' - puni bla
+#' - geog2 Geographic concentration
+#' - tenure Average worker tenure, years
+#' - klratio Capital-labor ratio
+#' - bunion bla
+#' @description 194 industrial sectors in the US
+#' @source American Economic Association Data Archive : \url{http://aeaweb.org/aer/}
+#' @references
+#' \insertRef{MATS:SHER:06}{tobit1}
+#' @importFrom Rdpack reprompt
+NULL
+    
+

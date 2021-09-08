@@ -8,7 +8,7 @@
 \alias{summary.tobit1}
 \alias{print.tobit1}
 \alias{print.summary.tobit1}
-\title{Zero left-truncated models}
+\title{Truncated response model}
 \usage{
 tobit1(
   formula,
@@ -72,9 +72,9 @@ information about the optimization process is printed,}
 \item{digits, width}{see \code{base::print},}
 }
 \description{
-Estimation of zero left-truncated models on censored or truncated
-samples using linear models, maximum likelihood or two-steps
-estimators
+Estimation of models for which the response is truncated, either on
+censored or truncated samples using linear models, maximum
+likelihood or two-steps estimators
 }
 \examples{
 # tobit model estimated by maximum likelihood

@@ -1,8 +1,8 @@
-#' Zero left-truncated models
+#' Truncated response model
 #'
-#' Estimation of zero left-truncated models on censored or truncated
-#' samples using linear models, maximum likelihood or two-steps
-#' estimators
+#' Estimation of models for which the response is truncated, either on
+#' censored or truncated samples using linear models, maximum
+#' likelihood or two-steps estimators
 #'
 #' @name tobit1
 #' @param formula a symbolic description of the model,
@@ -60,9 +60,10 @@ tobit1 <- function(formula, data, subset = NULL, start = NULL,
     y <- model.response(mf)
     N <- length(y)
 
-    # identify the truncated observations
+    # identify the untruncated observations
     P <- as.numeric(y > left & y < right)
     Plog <- as.logical(P)
+    share_untr <- mean(Plog)
     
     # check whether the sample is censored or truncated
     is_cens_smpl <- any(P == 0)
@@ -144,8 +145,35 @@ tobit1 <- function(formula, data, subset = NULL, start = NULL,
     # trimmed estimator
     if (.method == "trimmed"){
         if (! zerotrunc) stop("trimmed estimator only implemented for simple tobit")
-        i <- 1
-        eps <- 10
+        trim_trunc <- function(param, X, y, sum = TRUE, gradient = FALSE, hessian = TRUE){
+            bX <- as.numeric(X %*% param)
+            f <- (y - pmax(1 / 2 * y, bX)) ^ 2
+            if (sum) f <- sum(f)
+            if (gradient | hessian) ymin <- pmin(y, 2 * bX)
+            if (gradient){
+                grad <- - 2 * (y < (2 * bX)) * (y - bX) * X
+                if (sum) grad <- apply(grad, 2, sum)
+                attr(f, "gradient") <- grad
+            }
+            if (hessian) attr(f, "hessian")   <- 2 * crossprod( (y < (2 * bX)) * X, X)
+            f
+        }
+        trim_cens <- function(param, X, y, sum = TRUE, gradient = FALSE, hessian = FALSE){
+            sgn <- function(x) ifelse(x > 0, 1, -1)
+            bX <- as.numeric(X %*% param)
+            f <- (bX < 0) * (y ^ 2 / 2) +
+                (bX > 0 & y < (2 * bX)) * ((y - bX) ^ 2)+
+                (bX > 0 & y > (2 * bX)) * (y ^ 2 / 2 - bX ^ 2)
+            if (sum) f <- sum(f)
+            if (gradient | hessian) ymin <- pmin(y, 2 * bX)
+            if (gradient){
+                grad <- - 2 * (bX > 0)* (ymin - bX) * X
+                if (sum) grad <- apply(grad, 2, sum)
+                attr(f, "gradient") <- grad
+            }
+            if (hessian) attr(f, "hessian")   <- 2 * crossprod( (bX > 0) * sgn(2 * bX - y) * X, X)
+            f
+        }
         coefs <- coefs_init[1:(length(coefs_init) - 1)]
         if (.sample == "truncated") coefs <- newton(trim_trunc, coefs, trace = trace, X = X, y = y)
         else coefs <- newton(trim_cens, coefs, trace = trace, X = X, y = y)
@@ -179,10 +207,7 @@ tobit1 <- function(formula, data, subset = NULL, start = NULL,
     
     # non-linear least-squares
     if (.method == "nls"){
-        if (! zerotrunc) stop("trimmed estimator only implemented for simple tobit")
-        mills <- function(x) exp(dnorm(x, log = TRUE) - pnorm(x, log.p = TRUE))
-        dmills <- function(x) - mills(x) * (x + mills(x))
-        d2mills <- function(x) mills(x) * ( (x + mills(x)) * (x + 2 * mills(x)) - 1)
+        if (! zerotrunc) stop("nls estimator only implemented for simple tobit")
         if (.sample == "truncated"){
             fun_nls <-  function(x, gradient = FALSE, hessian = FALSE){
                 beta <- x[1:ncol(X)]
@@ -215,8 +240,6 @@ tobit1 <- function(formula, data, subset = NULL, start = NULL,
                 }
                 f
             }
-            i <- 1
-            eps <- 10
             coefs <- coefs_init
             coefs <- newton(fun_nls, coefs, trace = trace)
             f <- fun_nls(coefs, gradient = TRUE, hessian = TRUE)
@@ -244,21 +267,13 @@ tobit1 <- function(formula, data, subset = NULL, start = NULL,
     
     # Maximum likelihood estimator
     if (.method == "ml"){
-        if (.sample == "truncated"){
-            coefs_init[1:K] <- coefs_init[1:K] / coefs_init[K + 1]
-            coefs_init[K + 1] <- 1 / coefs_init[K + 1]
-            coefs <- newton(lnl_trunc_olsen, coefs_init, trace = trace, X = X, y = y, sum = FALSE, direction = "max")
-            coefs_init[1:K] <- coefs[1:K] / coefs[K + 1]
-            coefs_init[K + 1] <- 1 / coefs[K + 1]
-            coefs <- newton(lnl_trunc, coefs_init, trace = trace, X = X, y = y, sum = FALSE, direction = "max")
-            lnl_conv <- lnl_trunc(coefs, X = X, y = y, sum = FALSE, gradient = TRUE, hessian = TRUE)
-        }
-        else{
-            coefs <- newton(lnl_cens_tp, coefs_init, trace = trace, X = X, y = y, sum = FALSE,
-                            left = left, right = right, direction = "max")
-            lnl_conv <- lnl_cens_tp(coefs, X = X, y = y, sum = FALSE, gradient = TRUE, hessian = TRUE,
-                                    left = left, right = right)
-        }
+        coefs_init[1:K] <- coefs_init[1:K] / coefs_init[K + 1]
+        coefs_init[K + 1] <- 1 / coefs_init[K + 1]
+        coefs <- newton(lnl_tp_olsen, coefs_init, trace = trace, X = X, y = y, sum = FALSE, left = left, right = right, direction = "max", sample = .sample)
+        coefs[1:K] <- coefs[1:K] / coefs[K + 1]
+        coefs[K + 1] <- 1 / coefs[K + 1]
+        lnl_conv <- lnl_tp(coefs, X = X, y = y, sum = FALSE, gradient = TRUE, hessian = TRUE,
+                           left = left, right = right, sample = .sample)
         .hessian <- attr(lnl_conv, "hessian")
         .gradObs <- attr(lnl_conv, "gradient")
         .logLik <- sum(as.numeric(lnl_conv))
@@ -363,11 +378,16 @@ newton <- function(fun, coefs, trace, direction = c("min", "max"), ...){
         eps <- as.numeric(crossprod(solve(h, g), g))
                 if (trace) cat(paste("iteration:", i, "criteria:", round(eps, 5), "\n"))
         i <- i + 1
-        if (i > 50) stop("max iter reached")
+        if (i > 500) stop("max iter reached")
         coefs <- newcoefs
     }
     coefs
 }
+
+
+mills <- function(x) exp(dnorm(x, log = TRUE) - pnorm(x, log.p = TRUE))
+dmills <- function(x) - mills(x) * (x + mills(x))
+d2mills <- function(x) mills(x) * ( (x + mills(x)) * (x + 2 * mills(x)) - 1)
 
 ## lm methods that work on tobit objects:
 ## - formula                                  

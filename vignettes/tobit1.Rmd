@@ -442,3 +442,48 @@ $$
 \sigma_y M) - \Phi \beta \mu_x = \Phi(\alpha + \sigma_y M)
 $$
 
+
+
+## Two-limits tobit
+
+
+$e = y - \beta ^ \top x$, $z = \beta ^ \top x / \sigma$, $z_a = (a - \beta ^ \top
+x) / \sigma$, $z_b = (\beta ^ \top x - b) / \sigma$, $z_e = e /
+\sigma$.
+
+$r(z) = \phi(z) / \Phi(z)$ et $r'(z) = - r(z)(z + r(z))$.
+
+$$
+\ln l_n = I_a \ln \Phi(z_a) + I_b \ln \Phi(z_b) - I_o (0.5 \ln 2\pi +
+\ln \sigma + 0.5 z_e ^ 2)
+$$
+
+$$
+\left\{
+\begin{array}{rcl}
+\displaystyle \frac{\partial \ln l_n}{\partial \beta} &=& \left[-I_ar_a +
+I_br_b + I_ez_e\right]\frac{x}{\sigma}\\
+\displaystyle \frac{\partial \ln l_n}{\partial \sigma} &=&
+\left[-I_ar_az_a - I_br_bz_b + I_o(z_e ^ 2 -
+1)\right]\frac{1}{\sigma}
+\end{array}
+\right.
+$$
+
+$$
+\left\{
+\begin{array}{rcl}
+\displaystyle \frac{\partial ^ 2 \ln l_n}{\partial \beta \partial
+\beta ^ \top} &=& \left[I_a r_a' + I_b r_b' -
+I_o\right]\frac{xx'}{\sigma ^ 2} \\
+\displaystyle \frac{\partial ^ 2 \ln l_n}{\partial \beta \partial
+\sigma ^ \top} &=& \left[I_a (r_a + r_a'z_a) - I_b(r_b+r_b'z_b) -
+2I_ez_e\right]\frac{x}{\sigma ^ 2} \\
+\displaystyle \frac{\partial ^ 2 \ln l_n}{\partial
+\sigma ^ 2} &=& \left[I_a (2r_a z_a+ r_a'z_a ^ 2) +
+I_b(2r_bz_b+r_b'z_b ^ 2) -
+I_e(3z_e ^ 2 - 1)\right]\frac{1}{\sigma ^ 2} \\
+\end{array}
+\right.
+$$
+

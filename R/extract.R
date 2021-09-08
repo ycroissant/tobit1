@@ -8,6 +8,7 @@
 #' @param include.nobs if `TRUE` the number of observations is included
 #' @param ... Further arguments 
 #' @export
+#' @importFrom methods setMethod
 #' @importFrom texreg extract
 extract.tobit1 <- function(model, include.logLik = TRUE, include.nobs = TRUE, ...){
     s <- summary(model, ...)
@@ -47,8 +48,7 @@ extract.tobit1 <- function(model, include.logLik = TRUE, include.nobs = TRUE, ..
     return(tr)
 }
 
-
 methods::setMethod("extract",
-                   signature = className("tobit1", "tobit1"),
-                   definition = extract.tobit1)
+          signature = className("tobit1", "tobit1"),
+          definition = extract.tobit1)
 

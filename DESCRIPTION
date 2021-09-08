@@ -4,8 +4,8 @@ Date: 2021-08-27
 Title: One Equation Tobit Model
 Authors@R: person("Yves", "Croissant", role = c("aut", "cre"), email = "yves.croissant@univ-reunion.fr")
 Depends: R (>= 4.0.0)
-Imports: numDeriv, tibble, Rdpack, texreg
-Suggests: knitr, rmarkdown, testthat, AER, censReg, cmtest, tidyverse, methods
+Imports: methods, numDeriv, tibble, Rdpack, texreg, Formula
+Suggests: knitr, rmarkdown, testthat, AER, censReg, cmtest, tidyverse
 Description: A set of estimators and tests for models for which the
 	     response is truncated. The package includes a lot of
 	     developments following the seminal paper of Tobin (1958)

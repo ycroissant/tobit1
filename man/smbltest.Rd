@@ -27,7 +27,7 @@ tradeprotection <- tradeprotection \%>\%
 smbltest(as.Formula(y ~ x1 + x2 + labvar, inst), tradeprotection)
 }
 \references{
-\insertRef{SMIT:BLUN:86}
+\insertRef{SMIT:BLUN:86}{tobit1}
 }
 \author{
 Yves Croissant

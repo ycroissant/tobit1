@@ -21,7 +21,7 @@
 #'     fitted model.frame residuals optim
 #' @author Yves Croissant
 #' @references
-#' \insertRef{SMIT:BLUN:86}
+#' \insertRef{SMIT:BLUN:86}{tobit1}
 #' @export
 #' @examples
 #' library("Formula")

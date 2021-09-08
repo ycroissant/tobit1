@@ -56,7 +56,7 @@ Short <- ivtobit(as.Formula(y ~ x1 + I(x2 + labvar), inst), tradeprotection, met
 texreg::screenreg(list(GH = GH, Full = Full, Short = Short), digits = 4) \%>\% print 
 }
 \references{
-\insertRef{SMIT:BLUN:86}
+\insertRef{SMIT:BLUN:86}{tobit1}
 }
 \author{
 Yves Croissant

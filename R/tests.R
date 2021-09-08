@@ -9,7 +9,7 @@
 #' @author Yves Croissant
 #' @importFrom stats pchisq
 #' @references
-#' \insertRef{HAUS:78}
+#' \insertRef{HAUS:78}{tobit1}
 #' @examples
 #' library("tidyverse")
 #' charitable <- charitable %>% mutate(logdon = log(donation) - log(25))
@@ -57,7 +57,7 @@ haustest <- function(x, y, omit = NULL){
 #' @author Yves Croissant
 #' @importFrom stats pchisq
 #' @references
-#' \insertRef{SMIT:BLUN:86}
+#' \insertRef{SMIT:BLUN:86}{tobit1}
 #' @examples
 #' inst <- ~ sic3 + k_serv + inv + engsci + whitecol + skill + semskill + cropland + 
 #'     pasture + forest + coal + petro + minerals + scrconc + bcrconc +

@@ -26,7 +26,7 @@ scls <- update(ml, method = "trimmed")
 haustest(scls, ml, omit = "(Intercept)")
 }
 \references{
-\insertRef{HAUS:78}
+\insertRef{HAUS:78}{tobit1}
 }
 \author{
 Yves Croissant

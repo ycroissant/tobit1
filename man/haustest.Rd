@@ -25,6 +25,9 @@ ml <- tobit1(char_form, data = charitable)
 scls <- update(ml, method = "trimmed")
 haustest(scls, ml, omit = "(Intercept)")
 }
+\references{
+\insertRef{HAUS:78}
+}
 \author{
 Yves Croissant
 }

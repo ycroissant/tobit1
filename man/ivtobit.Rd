@@ -55,6 +55,9 @@ Full <- ivtobit(as.Formula(y ~ x1 + x2 + labvar, inst), tradeprotection, method 
 Short <- ivtobit(as.Formula(y ~ x1 + I(x2 + labvar), inst), tradeprotection, method = "2steps") 
 texreg::screenreg(list(GH = GH, Full = Full, Short = Short), digits = 4) \%>\% print 
 }
+\references{
+\insertRef{SMIT:BLUN:86}
+}
 \author{
 Yves Croissant
 }

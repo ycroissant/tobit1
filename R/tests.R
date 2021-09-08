@@ -8,6 +8,7 @@
 #' @param omit a character containing the effects that are removed from the test
 #' @author Yves Croissant
 #' @importFrom stats pchisq
+#' @references
 #' \insertRef{HAUS:78}
 #' @examples
 #' library("tidyverse")

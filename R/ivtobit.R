@@ -20,6 +20,8 @@
 #' @importFrom stats coef dnorm lm model.matrix model.response pnorm
 #'     fitted model.frame residuals optim
 #' @author Yves Croissant
+#' @references
+#' \insertRef{SMIT:BLUN:86}
 #' @export
 #' @examples
 #' library("Formula")

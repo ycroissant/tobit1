@@ -8,7 +8,7 @@
 #' @param omit a character containing the effects that are removed from the test
 #' @author Yves Croissant
 #' @importFrom stats pchisq
-#' \insertRet{HAUS:78}
+#' \insertRef{HAUS:78}
 #' @examples
 #' library("tidyverse")
 #' charitable <- charitable %>% mutate(logdon = log(donation) - log(25))
@@ -56,7 +56,7 @@ haustest <- function(x, y, omit = NULL){
 #' @author Yves Croissant
 #' @importFrom stats pchisq
 #' @references
-#' \insertRet{SMIT:BLUN:86}
+#' \insertRef{SMIT:BLUN:86}
 #' @examples
 #' inst <- ~ sic3 + k_serv + inv + engsci + whitecol + skill + semskill + cropland + 
 #'     pasture + forest + coal + petro + minerals + scrconc + bcrconc +

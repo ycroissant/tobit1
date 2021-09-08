@@ -48,7 +48,7 @@ extract.tobit1 <- function(model, include.logLik = TRUE, include.nobs = TRUE, ..
     return(tr)
 }
 
-methods::setMethod("extract",
-          signature = className("tobit1", "tobit1"),
-          definition = extract.tobit1)
+## methods::setMethod("extract",
+##           signature = className("tobit1", "tobit1"),
+##           definition = extract.tobit1)
 

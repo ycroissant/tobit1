@@ -71,7 +71,6 @@ ivtobit <- function(formula, data, subset = NULL, left = 0, right = Inf, method 
     tbtiv <- tobit1::tobit1(y ~ Z + Wres, left = left, right = right)
     result <- tbtiv
     if (.method == "2steps"){
-        cat("2steps estimation\n")
         if (! (left == 0 & is.infinite(right)))
             stop("the two-steps is only implemented for the zero-left truncated tobit model")
         lp <- tbtiv$linear.predictor

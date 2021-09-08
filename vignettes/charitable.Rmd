@@ -103,7 +103,7 @@ Hausman test:
 
 
 ```{r }
-hausman(scls, ml, omit = "(Intercept)")
+haustest(scls, ml, omit = "(Intercept)")
 ```
 
 Specification tests for the maximum likelihood can also be conducted

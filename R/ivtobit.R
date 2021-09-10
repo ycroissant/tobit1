@@ -165,7 +165,6 @@ ivtobit <- function(formula, data, subset = NULL, left = 0, right = Inf, method 
         coefs_sel <- c(1:(K + 1), K + G + 2)
         coefs_sel <- c(1:(K + G + 2))
         .coefs <- ra$par
-        print(.coefs)
         result$hessian <- numDeriv::hessian(lnliv, .coefs)[coefs_sel, coefs_sel]
         result$coefficients <- .coefs[coefs_sel]
     }

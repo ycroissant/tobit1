@@ -1,7 +1,7 @@
 # Verifier le signe du terme de troncature pour two-limits
 # gradient et hessienne OK pour censuré et pour tronq
 
-lnl_tp <- function(param, X, y, sum = TRUE, gradient = FALSE, hessian = FALSE, left = 0, right = Inf, sample = "censored"){
+lnl_tp <- function(param, X, y, wt, sum = TRUE, gradient = FALSE, hessian = FALSE, left = 0, right = Inf, sample = "censored"){
 
     CENS <- sample == "censored"
     TRUNC <- ! CENS
@@ -37,7 +37,7 @@ lnl_tp <- function(param, X, y, sum = TRUE, gradient = FALSE, hessian = FALSE, l
         if (TWO)   lnl_spec <- -  Io * log(pnorm(zb) - pnorm(za))
     }
     lnl <- lnl_com + lnl_spec
-    if (sum) lnl <- sum(lnl)
+    if (sum) lnl <- sum(lnl * wt)
     
     if (gradient){
         g_com_beta <- Io * ze
@@ -68,8 +68,8 @@ lnl_tp <- function(param, X, y, sum = TRUE, gradient = FALSE, hessian = FALSE, l
                 g_spec_sig <-  Io * (mills(zb) * pnorm(zb) * zb - mills(za) * pnorm(za) * za) / Dphi
             }
         }
-        grad <- cbind((g_com_beta +  g_spec_beta) * X,
-                       g_com_sig + g_spec_sig) / sig
+        grad <- wt * cbind((g_com_beta +  g_spec_beta) * X,
+                           g_com_sig + g_spec_sig) / sig
         if (sum) grad <- apply(grad, 2, sum)
         attr(lnl, "gradient") <- grad
     }
@@ -120,9 +120,9 @@ lnl_tp <- function(param, X, y, sum = TRUE, gradient = FALSE, hessian = FALSE, l
                 h_spec_sig_sig <- -Io * (B / DELTA - (B_sig * DELTA - B * D_sig) / DELTA ^ 2)
             }
         }
-        H_bb <- crossprod( (h_com_beta_beta + h_spec_beta_beta) * X, X)
-        H_bs <- apply((h_com_beta_sig + h_spec_beta_sig) * X, 2, sum)
-        H_ss <- sum(h_com_sig_sig + h_spec_sig_sig)
+        H_bb <- crossprod(wt* (h_com_beta_beta + h_spec_beta_beta) * X, X)
+        H_bs <- apply(wt * (h_com_beta_sig + h_spec_beta_sig) * X, 2, sum)
+        H_ss <- sum(wt * (h_com_sig_sig + h_spec_sig_sig))
         attr(lnl, "hessian") <- rbind(cbind(H_bb, H_bs),
                                       c(H_bs, H_ss)) / sig ^ 2
       }

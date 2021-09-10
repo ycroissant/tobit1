@@ -8,6 +8,8 @@
 #' @param formula a symbolic description of the model,
 #' @param data a data frame,
 #' @param subset a subset,
+#' @param weights an optional vector of weights (currently only
+#'     supported by ml method
 #' @param start an optional vector of starting values
 #' @param left,right left and right limits of the dependent
 #'     variable. The default is respectively 0 and +Inf which
@@ -24,11 +26,18 @@
 #'     information about the optimization process is printed,
 #' @param x,object an object of class `tobit1` or `summary.tobit1`,
 #' @param digits,width see `base::print`,
+#' @param newdata a data set for which the predictions should be
+#'     computed,
+#' @param what indicates what kind of predictions should be performed,
+#'     one of `linpred` for the linear predictor, `expvalue` for the
+#'     expected value and `prob` for the probability of geting an
+#'     untruncated vale,
 #' @param ... further arguments.
 #' @importFrom tibble tibble
 #' @importFrom stats binomial coef dnorm glm lm model.matrix
 #'     model.response pnorm sigma df.residual fitted logLik
 #'     model.frame printCoefmat residuals terms vcov nobs
+#'     model.weights .getXlevels predict delete.response predict
 #' @author Yves Croissant
 #' @examples
 #' # tobit model estimated by maximum likelihood
@@ -38,8 +47,8 @@
 #' # same model fitted on the truncated sample
 #' tobit1(fees ~ expense, feesadm, sample = "truncated")
 #' @export
-tobit1 <- function(formula, data, subset = NULL, start = NULL,
-                   left = 0, right = Inf,
+tobit1 <- function(formula, data, subset = NULL, weights = NULL,
+                   start = NULL, left = 0, right = Inf,
                    sample = c("censored", "truncated"),
                    method = c("ml", "lm", "2steps", "trimmed", "nls"),
                    trace = FALSE){    
@@ -47,7 +56,7 @@ tobit1 <- function(formula, data, subset = NULL, start = NULL,
     .method <- match.arg(method)
     .sample <- match.arg(sample)
     cl <- match.call(expand.dots = FALSE)
-    m <- match(c("formula", "data", "subset"),
+    m <- match(c("formula", "data", "subset", "weights"),
                names(cl), 0L)
     zerotrunc <- ifelse(left == 0 & is.infinite(right) & (right > 0), TRUE, FALSE)
     # construct the model frame and components
@@ -55,11 +64,15 @@ tobit1 <- function(formula, data, subset = NULL, start = NULL,
     mf <- cl
     mf[[1L]] <- as.name("model.frame")
     mf <- eval(mf, parent.frame())
+    mt <- attr(mf, "terms")
     X <- model.matrix(formula, mf)
     K <- ncol(X)
     y <- model.response(mf)
     N <- length(y)
-
+    wt <- model.weights(mf)
+    if (is.null(wt)) wt <- rep(1, N)
+    else wt <- wt / mean(wt)
+    
     # identify the untruncated observations
     P <- as.numeric(y > left & y < right)
     Plog <- as.logical(P)
@@ -73,6 +86,7 @@ tobit1 <- function(formula, data, subset = NULL, start = NULL,
     if (.method != "2steps" & is_cens_smpl & .sample == "truncated"){
         X <- X[Plog, ]
         y <- y[Plog]
+        wt <- wt[Plog]
     }
 
     # compute the starting values if they are not provided
@@ -269,10 +283,11 @@ tobit1 <- function(formula, data, subset = NULL, start = NULL,
     if (.method == "ml"){
         coefs_init[1:K] <- coefs_init[1:K] / coefs_init[K + 1]
         coefs_init[K + 1] <- 1 / coefs_init[K + 1]
-        coefs <- newton(lnl_tp_olsen, coefs_init, trace = trace, X = X, y = y, sum = FALSE, left = left, right = right, direction = "max", sample = .sample)
+        coefs <- newton(lnl_tp_olsen, coefs_init, trace = trace, X = X, y = y, wt = wt,
+                        sum = FALSE, left = left, right = right, direction = "max", sample = .sample)
         coefs[1:K] <- coefs[1:K] / coefs[K + 1]
         coefs[K + 1] <- 1 / coefs[K + 1]
-        lnl_conv <- lnl_tp(coefs, X = X, y = y, sum = FALSE, gradient = TRUE, hessian = TRUE,
+        lnl_conv <- lnl_tp(coefs, X = X, y = y, wt = wt, sum = FALSE, gradient = TRUE, hessian = TRUE,
                            left = left, right = right, sample = .sample)
         .hessian <- attr(lnl_conv, "hessian")
         .gradObs <- attr(lnl_conv, "gradient")
@@ -285,6 +300,7 @@ tobit1 <- function(formula, data, subset = NULL, start = NULL,
         Epos <- linear.predictor + sigma * mills(h)
         .fitted <- tibble::tibble(y = y, Ppos = Ppos, Epos = Epos, lp = linear.predictor)
         .vcov <- solve(- .hessian)
+        dimnames(.vcov) <- list(names(coefs), names(coefs))
         .terms <-  terms(mf)
         attr(.terms, ".Environment") <- NULL
         result <- list(coefficients = coefs,
@@ -298,7 +314,9 @@ tobit1 <- function(formula, data, subset = NULL, start = NULL,
                        logLik = structure(.logLik, nobs = length(y), df = length(coefs), class = "logLik"),
                        model = mf,
                        terms = .terms,
-                       call = .call)
+                       call = .call,
+                       xlevels = .getXlevels(mt, mf)
+                       )
     }
     structure(result, class = c("tobit1", "lm"))
 }
@@ -350,6 +368,31 @@ print.summary.tobit1 <- function (x, digits = max(3, getOption("digits") - 2), w
 }
 
 
+#' @rdname tobit1
+#' @export
+predict.tobit1 <- function(object, newdata = NULL,
+                           what = c("expvalue", "prob", "linpred"), ...){
+    what <- match.arg(what)
+    K <- length(coef(object)) - 1
+    if(missing(newdata)) {
+        x <- object$fitted$lp
+    }
+    else{
+        mt <- delete.response(object$terms)
+        mf <- model.frame(mt, newdata, xlev = object$xlevels)
+        X <- model.matrix(mt, mf)
+        beta <- object$coefficients[1:K]
+        # use head(, -1) to remove the last coefficient (which is
+        # sigma)
+        x <- drop(X %*% beta)
+    }
+    sig <- object$coefficients[K + 1]
+    if (what == "expvalue") x <- x + mills(x / sig)
+    if (what == "prob") x <- pnorm(x / sig)
+    return(x)
+}
+
+
 newton <- function(fun, coefs, trace, direction = c("min", "max"), ...){
     if (trace){
         cat("Initial values of the coefficients:\n")
@@ -385,6 +428,8 @@ newton <- function(fun, coefs, trace, direction = c("min", "max"), ...){
 }
 
 
+
+
 mills <- function(x) exp(dnorm(x, log = TRUE) - pnorm(x, log.p = TRUE))
 dmills <- function(x) - mills(x) * (x + mills(x))
 d2mills <- function(x) mills(x) * ( (x + mills(x)) * (x + 2 * mills(x)) - 1)
@@ -404,7 +449,7 @@ d2mills <- function(x) mills(x) * ( (x + mills(x)) * (x + 2 * mills(x)) - 1)
 ## - logLik
 ## - summary
 ## - print.summary
-
+## - predict
 
 ## Objects of class tobit have the following components:
 ## - coefficients
@@ -417,4 +462,5 @@ d2mills <- function(x) mills(x) * ( (x + mills(x)) * (x + 2 * mills(x)) - 1)
 ## - model
 ## - terms
 ## - call
+
 

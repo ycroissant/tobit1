@@ -1,4 +1,5 @@
-lnl_tp_olsen <- function(param, X, y, sum = TRUE, gradient = FALSE, hessian = FALSE, left = 0, right = Inf, sample = "censored"){
+lnl_tp_olsen <- function(param, X, y, wt, sum = TRUE, gradient = FALSE, hessian = FALSE,
+                         left = 0, right = Inf, sample = "censored"){
 
     CENS <- sample == "censored"
     TRUNC <- ! CENS
@@ -33,7 +34,7 @@ lnl_tp_olsen <- function(param, X, y, sum = TRUE, gradient = FALSE, hessian = FA
         if (TWO)   lnl_spec <- - Io * log(pnorm(zb) - pnorm(za))
     }
     lnl <- lnl_com + lnl_spec
-    if (sum) lnl <- sum(lnl)
+    if (sum) lnl <- sum(wt * lnl)
     
     if (gradient){
         g_com_beta <- Io * ze
@@ -64,8 +65,8 @@ lnl_tp_olsen <- function(param, X, y, sum = TRUE, gradient = FALSE, hessian = FA
                 g_spec_sig <-  - Io * (mills(zb) * pnorm(zb) * right - mills(za) * pnorm(za) * left) / Dphi
             }
         }
-        grad <- cbind((g_com_beta +  g_spec_beta) * X,
-                       g_com_sig + g_spec_sig)
+        grad <- wt * cbind((g_com_beta +  g_spec_beta) * X,
+                           g_com_sig + g_spec_sig)
         if (sum) grad <- apply(grad, 2, sum)
         attr(lnl, "gradient") <- grad
     }
@@ -116,9 +117,9 @@ lnl_tp_olsen <- function(param, X, y, sum = TRUE, gradient = FALSE, hessian = FA
                 h_spec_sig_sig <- Io * (B / DELTA - (B_sig * DELTA - B * D_sig) / DELTA ^ 2)
             }
         }
-        H_bb <- crossprod( (h_com_beta_beta + h_spec_beta_beta) * X, X)
-        H_bs <- apply((h_com_beta_sig + h_spec_beta_sig) * X, 2, sum)
-        H_ss <- sum(h_com_sig_sig + h_spec_sig_sig)
+        H_bb <- crossprod(wt * (h_com_beta_beta + h_spec_beta_beta) * X, X)
+        H_bs <- apply(wt * (h_com_beta_sig + h_spec_beta_sig) * X, 2, sum)
+        H_ss <- sum(wt * (h_com_sig_sig + h_spec_sig_sig))
         attr(lnl, "hessian") <- rbind(cbind(H_bb, H_bs),
                                       c(H_bs, H_ss))
       }

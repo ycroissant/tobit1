@@ -5,7 +5,9 @@
 #' likelihood or two-steps estimators
 #'
 #' @name tobit1
-#' @param formula a symbolic description of the model,
+#' @param formula a symbolic description of the model; if two right
+#'     hand sides are provided, the second one is used to parametrize
+#'     the conditional variance,
 #' @param data a data frame,
 #' @param subset a subset,
 #' @param weights an optional vector of weights (currently only
@@ -15,6 +17,11 @@
 #'     variable. The default is respectively 0 and +Inf which
 #'     corresponds to the most classic (left-zero truncated) tobit
 #'     model,
+#' @param scedas the functional form used to specify the conditional
+#'     variance, which is of the form: s_n = s_o f(Z'g), where Z are
+#'     the covariates indicated in the second part of the formula and
+#'     z_o and g a set of parameters to estimate. Currently, f can
+#'     either be set to `"exp"` or `"pnorm"`,
 #' @param sample either `"censored"` (the default) to estimate the
 #'     censored (tobit) regression model or `"truncated"` to estimated
 #'     the truncated regression model,
@@ -38,6 +45,7 @@
 #'     model.response pnorm sigma df.residual fitted logLik
 #'     model.frame printCoefmat residuals terms vcov nobs
 #'     model.weights .getXlevels predict delete.response predict
+#'     update
 #' @author Yves Croissant
 #' @examples
 #' # tobit model estimated by maximum likelihood
@@ -49,13 +57,16 @@
 #' @export
 tobit1 <- function(formula, data, subset = NULL, weights = NULL,
                    start = NULL, left = 0, right = Inf,
+                   scedas = c("exp", "pnorm"),
                    sample = c("censored", "truncated"),
                    method = c("ml", "lm", "2steps", "trimmed", "nls"),
-                   trace = FALSE){    
+                   trace = FALSE){
     .call <- match.call()
     .method <- match.arg(method)
     .sample <- match.arg(sample)
+    .scedas <- match.arg(scedas)
     cl <- match.call(expand.dots = FALSE)
+    formula <- cl$formula <- Formula(formula)
     m <- match(c("formula", "data", "subset", "weights"),
                names(cl), 0L)
     zerotrunc <- ifelse(left == 0 & is.infinite(right) & (right > 0), TRUE, FALSE)
@@ -65,7 +76,16 @@ tobit1 <- function(formula, data, subset = NULL, weights = NULL,
     mf[[1L]] <- as.name("model.frame")
     mf <- eval(mf, parent.frame())
     mt <- attr(mf, "terms")
-    X <- model.matrix(formula, mf)
+    if (length(formula)[2] > 1){
+        X <- model.matrix(formula, mf, rhs = 1)
+        formh <- formula(formula, rhs = 2)
+        if (attr(terms(formh), "intercept") == 1L) formh <- update(formh, . ~ . - 1)
+        Z <- model.matrix(formh, mf)
+    }
+    else{
+        X <- model.matrix(formula, mf)
+        Z <- NULL
+    }
     K <- ncol(X)
     y <- model.response(mf)
     N <- length(y)
@@ -93,6 +113,8 @@ tobit1 <- function(formula, data, subset = NULL, weights = NULL,
     if (is.null(start)){
         init_lm <- cl
         init_lm[[1L]] <- as.name("lm")
+        if (length(formula)[2] > 1)
+            init_lm$formula <- formula(formula, rhs = 1)
         init_lm <- eval(init_lm, parent.frame())
         coefs_init <- c(coef(init_lm), sigma = sigma(init_lm))
     }
@@ -287,13 +309,27 @@ tobit1 <- function(formula, data, subset = NULL, weights = NULL,
                         sum = FALSE, left = left, right = right, direction = "max", sample = .sample)
         coefs[1:K] <- coefs[1:K] / coefs[K + 1]
         coefs[K + 1] <- 1 / coefs[K + 1]
-        lnl_conv <- lnl_tp(coefs, X = X, y = y, wt = wt, sum = FALSE, gradient = TRUE, hessian = TRUE,
-                           left = left, right = right, sample = .sample)
+        if (is.null(Z)){
+            ## lnl_conv <- lnl_tp(coefs, X = X, y = y, wt = wt, sum = FALSE, gradient = TRUE, hessian = TRUE,
+            ##                    left = left, right = right, sample = .sample)
+            lnl_conv <- lnl_tp(coefs, X = X, y = y, wt = wt, sum = FALSE, gradient = TRUE, hessian = TRUE,
+                               left = left, right = right, sample = .sample)
+        }
+        else{
+            sup_coef <- rep(0, ncol(Z))
+            names(sup_coef) <- paste("sig_", colnames(Z), sep = "")
+            coefs <- c(coefs, sup_coef)
+            coefs <- newton(lnl_tp, coefs, trace = TRUE, X = X, y = y, wt = wt, Z = Z, scedas = .scedas, left = left, right = right, direction = "max", sample = .sample)
+            lnl_conv <- lnl_tp(coefs, X = X, y = y, wt = wt, scedas = .scedas, Z = Z, sum = FALSE, gradient = TRUE, hessian = TRUE,
+                                     left = left, right = right, sample = .sample)
+        }
+            
         .hessian <- attr(lnl_conv, "hessian")
         .gradObs <- attr(lnl_conv, "gradient")
         .logLik <- sum(as.numeric(lnl_conv))
         beta <- coefs[1:K]
         sigma <- coefs[K + 1]
+
         linear.predictor <- as.numeric(X %*% beta)
         h <- linear.predictor / sigma
         Ppos <- pnorm(h)

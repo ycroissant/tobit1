@@ -19,6 +19,7 @@ tobit1(
   start = NULL,
   left = 0,
   right = Inf,
+  scedas = c("exp", "pnorm"),
   sample = c("censored", "truncated"),
   method = c("ml", "lm", "2steps", "trimmed", "nls"),
   trace = FALSE
@@ -44,7 +45,9 @@ tobit1(
 \method{predict}{tobit1}(object, newdata = NULL, what = c("expvalue", "prob", "linpred"), ...)
 }
 \arguments{
-\item{formula}{a symbolic description of the model,}
+\item{formula}{a symbolic description of the model; if two right
+hand sides are provided, the second one is used to parametrize
+the conditional variance,}
 
 \item{data}{a data frame,}
 
@@ -59,6 +62,12 @@ supported by ml method}
 variable. The default is respectively 0 and +Inf which
 corresponds to the most classic (left-zero truncated) tobit
 model,}
+
+\item{scedas}{the functional form used to specify the conditional
+variance, which is of the form: s_n = s_o f(Z'g), where Z are
+the covariates indicated in the second part of the formula and
+z_o and g a set of parameters to estimate. Currently, f can
+either be set to \code{"exp"} or \code{"pnorm"},}
 
 \item{sample}{either \code{"censored"} (the default) to estimate the
 censored (tobit) regression model or \code{"truncated"} to estimated

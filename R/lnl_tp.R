@@ -1,7 +1,4 @@
-# Verifier le signe du terme de troncature pour two-limits
-# gradient et hessienne OK pour censuré et pour tronq
-
-lnl_tp <- function(param, X, y, wt, sum = TRUE, gradient = FALSE, hessian = FALSE, left = 0, right = Inf, sample = "censored"){
+lnl_tp <- function(param, X, y, wt, Z = NULL, scedas = c("exp", "pnorm"), sum = TRUE, gradient = FALSE, hessian = FALSE, left = 0, right = Inf, sample = "censored"){
 
     CENS <- sample == "censored"
     TRUNC <- ! CENS
@@ -9,21 +6,43 @@ lnl_tp <- function(param, X, y, wt, sum = TRUE, gradient = FALSE, hessian = FALS
     RIGHT <- is.infinite(left) & ! is.infinite(right)
     TWO <- ! is.infinite(left) & ! is.infinite(right)
     if (TWO & TRUNC) stop("the two-limits truncated model is not supported")
-
     Ia <- y <= left
     Ib <- y >= right
     Io <- (y > left & y < right)
 
-    K <- length(param) - 1
+    K <- ncol(X)
     N <- length(y)
     beta <- param[1:K]
-    sig <- param[K + 1]
+    bX <- drop(X %*% beta)
+    sigo <- param[K + 1]
 
-    bX <- as.numeric(X %*% beta)
-    za <- (left - bX) / sig
+    .scedas <- match.arg(scedas)
+    if (.scedas == "exp"){
+        fh <- function(x) exp(x)
+        gh <- function(x) exp(x)
+        hh <- function(x) exp(x)
+    }
+    if (.scedas == "pnorm"){
+        fh <- function(x) pnorm(x)
+        gh <- function(x) dnorm(x)
+        hh <- function(x) -x * dnorm(x)
+    }
+
+    if (is.null(Z)){
+        heter <- FALSE
+        sig <- sigo
+    }
+    else{
+        heter <- TRUE
+        J <- ncol(Z)
+        gamma <- param[(K + 2) : (K + 1 + J)]
+        gZ <- as.numeric(Z %*% gamma)
+        sig <- sigo * fh(gZ)
+    }
+    
+    za <- (left  - bX) / sig
     zb <- (right - bX) / sig
-    ze <- (y - bX) / sig
-
+    ze <- (    y - bX) / sig
     lnl_com <-  Io * (- log(sig) - 0.5 * log(2 * pi) - 1 / 2 * ze ^ 2)
 
     if (CENS){
@@ -38,7 +57,6 @@ lnl_tp <- function(param, X, y, wt, sum = TRUE, gradient = FALSE, hessian = FALS
     }
     lnl <- lnl_com + lnl_spec
     if (sum) lnl <- sum(lnl * wt)
-    
     if (gradient){
         g_com_beta <- Io * ze
         g_com_sig <-  Io * (ze ^ 2 - 1)
@@ -68,8 +86,14 @@ lnl_tp <- function(param, X, y, wt, sum = TRUE, gradient = FALSE, hessian = FALS
                 g_spec_sig <-  Io * (mills(zb) * pnorm(zb) * zb - mills(za) * pnorm(za) * za) / Dphi
             }
         }
-        grad <- wt * cbind((g_com_beta +  g_spec_beta) * X,
-                           g_com_sig + g_spec_sig) / sig
+        if (heter){
+            grad <- wt * cbind((g_com_beta + g_spec_beta) * X,
+                               (g_com_sig  + g_spec_sig) * cbind(fh(gZ), sigo * gh(gZ) * Z)) / sig
+        }
+        else{
+            grad <- wt * cbind((g_com_beta + g_spec_beta) * X,
+                               (g_com_sig  + g_spec_sig) ) / sig
+        }
         if (sum) grad <- apply(grad, 2, sum)
         attr(lnl, "gradient") <- grad
     }
@@ -120,11 +144,25 @@ lnl_tp <- function(param, X, y, wt, sum = TRUE, gradient = FALSE, hessian = FALS
                 h_spec_sig_sig <- -Io * (B / DELTA - (B_sig * DELTA - B * D_sig) / DELTA ^ 2)
             }
         }
-        H_bb <- crossprod(wt* (h_com_beta_beta + h_spec_beta_beta) * X, X)
-        H_bs <- apply(wt * (h_com_beta_sig + h_spec_beta_sig) * X, 2, sum)
-        H_ss <- sum(wt * (h_com_sig_sig + h_spec_sig_sig))
-        attr(lnl, "hessian") <- rbind(cbind(H_bb, H_bs),
-                                      c(H_bs, H_ss)) / sig ^ 2
-      }
+        if (heter){
+            H_bb <- crossprod(wt * (h_com_beta_beta + h_spec_beta_beta) * X / sig, X / sig)
+            H_bs <- crossprod(wt * (h_com_beta_sig  + h_spec_beta_sig ) * X / sig, cbind(fh(gZ), sigo * gh(gZ) * Z) / sig)
+            h_ss <- (h_com_sig_sig + h_spec_sig_sig)
+            A <- sum(wt * h_ss * fh(gZ) ^ 2 / sig ^ 2)
+            g_s <- (g_com_sig + g_spec_sig) / sig
+            B <- apply(wt * gh(gZ) * ( h_ss  / sig ^ 2 * sigo* fh(gZ) + g_s) * Z, 2, sum)
+            D <- crossprod(wt * (h_ss * sigo ^ 2 * gh(gZ) ^ 2 / sig ^ 2 + sigo * g_s * hh(gZ)) * Z, Z)
+            H_ss <- rbind(c(A, B), cbind(B, D))
+            attr(lnl, "hessian") <- rbind(cbind(H_bb, H_bs),
+                                          cbind(t(H_bs), H_ss))
+        }
+        else{
+            H_bb <- crossprod(wt * (h_com_beta_beta + h_spec_beta_beta) * X, X)
+            H_bs <- apply(wt * (h_com_beta_sig + h_spec_beta_sig) * X, 2, sum)
+            H_ss <- sum(wt * (h_com_sig_sig + h_spec_sig_sig))
+            attr(lnl, "hessian") <- rbind(cbind(H_bb, H_bs),
+                                          c(H_bs, H_ss)) / sig ^ 2
+        }
+    }
     lnl
 }

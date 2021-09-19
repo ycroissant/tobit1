@@ -33,12 +33,6 @@
 #'     information about the optimization process is printed,
 #' @param x,object an object of class `tobit1` or `summary.tobit1`,
 #' @param digits,width see `base::print`,
-#' @param newdata a data set for which the predictions should be
-#'     computed,
-#' @param what indicates what kind of predictions should be performed,
-#'     one of `linpred` for the linear predictor, `expvalue` for the
-#'     expected value and `prob` for the probability of geting an
-#'     untruncated vale,
 #' @param ... further arguments.
 #' @importFrom tibble tibble
 #' @importFrom stats binomial coef dnorm glm lm model.matrix
@@ -310,18 +304,21 @@ tobit1 <- function(formula, data, subset = NULL, weights = NULL,
         coefs[1:K] <- coefs[1:K] / coefs[K + 1]
         coefs[K + 1] <- 1 / coefs[K + 1]
         if (is.null(Z)){
-            ## lnl_conv <- lnl_tp(coefs, X = X, y = y, wt = wt, sum = FALSE, gradient = TRUE, hessian = TRUE,
-            ##                    left = left, right = right, sample = .sample)
-            lnl_conv <- lnl_tp(coefs, X = X, y = y, wt = wt, sum = FALSE, gradient = TRUE, hessian = TRUE,
+            lnl_conv <- lnl_tp(coefs, X = X, y = y, wt = wt,
+                               sum = FALSE, gradient = TRUE, hessian = TRUE,
                                left = left, right = right, sample = .sample)
         }
         else{
             sup_coef <- rep(0, ncol(Z))
             names(sup_coef) <- paste("sig_", colnames(Z), sep = "")
             coefs <- c(coefs, sup_coef)
-            coefs <- newton(lnl_tp, coefs, trace = TRUE, X = X, y = y, wt = wt, Z = Z, scedas = .scedas, left = left, right = right, direction = "max", sample = .sample)
-            lnl_conv <- lnl_tp(coefs, X = X, y = y, wt = wt, scedas = .scedas, Z = Z, sum = FALSE, gradient = TRUE, hessian = TRUE,
-                                     left = left, right = right, sample = .sample)
+            coefs <- newton(lnl_tp, coefs, trace = TRUE, X = X, y = y, wt = wt,
+                            Z = Z, scedas = .scedas,
+                            left = left, right = right, direction = "max", sample = .sample)
+            lnl_conv <- lnl_tp(coefs, X = X, y = y, wt = wt,
+                               scedas = .scedas, Z = Z,
+                               sum = FALSE, gradient = TRUE, hessian = TRUE,
+                               left = left, right = right, sample = .sample)
         }
             
         .hessian <- attr(lnl_conv, "hessian")
@@ -351,7 +348,8 @@ tobit1 <- function(formula, data, subset = NULL, weights = NULL,
                        model = mf,
                        terms = .terms,
                        call = .call,
-                       xlevels = .getXlevels(mt, mf)
+                       xlevels = .getXlevels(mt, mf),
+                       na.action = attr(mf, "na.action")
                        )
     }
     structure(result, class = c("tobit1", "lm"))
@@ -404,26 +402,20 @@ print.summary.tobit1 <- function (x, digits = max(3, getOption("digits") - 2), w
 }
 
 
-#' @rdname tobit1
+#' @rdname prediction_margins
 #' @export
 predict.tobit1 <- function(object, newdata = NULL,
                            what = c("expvalue", "prob", "linpred"), ...){
+    if (is.null(newdata)) newdata <- model.frame(object)
     what <- match.arg(what)
     K <- length(coef(object)) - 1
-    if(missing(newdata)) {
-        x <- object$fitted$lp
-    }
-    else{
-        mt <- delete.response(object$terms)
-        mf <- model.frame(mt, newdata, xlev = object$xlevels)
-        X <- model.matrix(mt, mf)
-        beta <- object$coefficients[1:K]
-        # use head(, -1) to remove the last coefficient (which is
-        # sigma)
-        x <- drop(X %*% beta)
-    }
+    mt <- delete.response(object$terms)
+    mf <- model.frame(mt, newdata, xlev = object$xlevels)
+    X <- model.matrix(mt, mf)
+    beta <- object$coefficients[1:K]
+    x <- drop(X %*% beta)
     sig <- object$coefficients[K + 1]
-    if (what == "expvalue") x <- x + mills(x / sig)
+    if (what == "expvalue") x <- x + sig * mills(x / sig)
     if (what == "prob") x <- pnorm(x / sig)
     return(x)
 }

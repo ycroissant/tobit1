@@ -7,9 +7,9 @@
 #' @param include.logLik if `TRUE` the log-likelihood value is included
 #' @param include.nobs if `TRUE` the number of observations is included
 #' @param ... Further arguments 
-#' @export
 #' @importFrom methods setMethod
 #' @importFrom texreg extract
+#' @export
 extract.tobit1 <- function(model, include.logLik = TRUE, include.nobs = TRUE, ...){
     s <- summary(model, ...)
     names <- rownames(s$coef)
@@ -71,64 +71,121 @@ make_data_frame <- function(...) {
 }
 
 
-#' prediction method
+#' prediction methods
 #'
-#' The prediction package computes the predicted values in a tidy way,
-#' using the predict method of the object. It is used by the margins package
+#' Methods to compute the predictions and the marginal effects for
+#' tobit1 objects
 #'
-#' @name prediction.tobit1
-#' @param model a model fitted using `tobit1`
-#' @param what the kind of predictions
-#' @param data,at see `prediction::prediction`
-#' @param ... further arguments
-#' @importFrom prediction find_data build_datalist
+#' @name prediction_margins
+#' @param model,object a model fitted using `tobit1`
+#' @param data,at,type,vcov,calculate_se see `prediction::prediction`
+#' @param newdata a new data frame for which the predict method should
+#'     compute the predictions
+#' @param what for the predict method, the kind of predictions, can be
+#'     the probabilities (`prob`), the linear predictor (`linpred`)
+#'     and the expected value of the response (`expvalue`)
+#' @param ... further arguments, especially, a `what` argument can be
+#'     provided and will be passed to `predict`
+#' @details `tobit1` exports the `prediction::prediction` and
+#'     `margins::margins` functions. `prediction` use the `predict`
+#'     method to compute the predictions in a "tidy way", it returns
+#'     the data frame provided for the predictions augmented by the
+#'     predictions. `margins` compute the average marginal effect of
+#'     every covariate. It uses the numerical derivatives of the
+#'     predictions using the `prediction` function.
+#' @examples
+#' data("feesadm", package = "tobit1")
+#' z <- tobit1(fees ~ expense + I(expense ^ 2) + region, feesadm)
+#' head(predict(z))
+#' # same with what = "expvalue", the default
+#' head(predict(z, what = "expvalue"))
+#' # compute the linear predictor and the probability
+#' head(predict(z, what = "linpred"))
+#' head(predict(z, what = "prob"))
+#' # the prediction method returns a data frame
+#' prediction(z, what = "prob")
+#' # use a smaller data set
+#' fees2 <- feesadm[5:25, ]
+#' predict(z, newdata = fees2, what = "prob")
+#' prediction(z, data = fees2, what = "prob")
+#' margins(z, data = fees2, what = "prob")
+#' summary(margins(z, data = fees2, what = "prob"))
+#' @importFrom prediction prediction find_data build_datalist
+#' @importFrom stats na.pass
 #' @export
-prediction.tobit1 <- function(model, 
-                              data = find_data(model, parent.frame()),
-                              at = NULL,
-                              what = c("expvalue", "prob", "linpred"),
-                              ...) {
-
-    what <- match.arg(what)
-    type <- "response"
-    
-    # extract predicted value
+prediction.tobit1 <- function (model, data = find_data(model, parent.frame()), at = NULL, 
+                               type = "response", vcov = stats::vcov(model), calculate_se = FALSE, 
+                               ...){
+    type <- match.arg(type)
     data <- data
     if (missing(data) || is.null(data)) {
-        pred <- make_data_frame(fitted = predict(model, type = type, ...), 
-                                se.fitted = NA_real_)
-    }
-    else{
-        # reduce memory profile
-        model[["model"]] <- NULL
-        
-        # setup data
-        if (is.null(at)) {
-            out <- data
+        if (isTRUE(calculate_se)) {
+            pred <- predict(model, type = type, se.fit = TRUE, 
+                ...)
+            pred <- make_data_frame(fitted = pred[["fit"]], se.fitted = pred[["se.fit"]])
         }
         else {
-            out <- build_datalist(data, at = at, as.data.frame = TRUE)
-            at_specification <- attr(out, "at_specification")
+            pred <- predict(model, type = type, se.fit = FALSE, 
+                ...)
+            pred <- make_data_frame(fitted = pred, se.fitted = rep(NA_real_, 
+                length(pred)))
         }
-        # calculate predictions
-        pred <- predict(model, newdata = out, what = what, type = type, ...)
-        # cbind back together
-        pred <- make_data_frame(out, fitted = pred,
-                                se.fitted = rep(NA_real_, length(pred)))
     }
-    
-    # variance(s) of average predictions
-    vc <- NA_real_
-    
-    # output
-    structure(pred, 
-              class = c("prediction", "data.frame"),
-              at = if (is.null(at)) at else at_specification,
-              type = type,
-              call = if ("call" %in% names(model)) model[["call"]] else NULL,
-              model_class = class(model),
-              row.names = seq_len(nrow(pred)),
-              vcov = vc,
-              jacobian = NULL,
-              weighted = FALSE)
+    else {
+        model[["model"]] <- NULL
+        datalist <- build_datalist(data, at = at, as.data.frame = TRUE)
+        at_specification <- attr(datalist, "at_specification")
+        if (isTRUE(calculate_se)) {
+            tmp <- predict(model, newdata = datalist, type = type, 
+                se.fit = TRUE, ...)
+            pred <- make_data_frame(datalist, fitted = tmp[["fit"]], 
+                se.fitted = tmp[["se.fit"]])
+        }
+        else {
+            tmp <- predict(model, newdata = datalist, type = type, 
+                se.fit = FALSE, ...)
+            pred <- make_data_frame(datalist, fitted = tmp, se.fitted = rep(NA_real_, 
+                nrow(datalist)))
+        }
+    }
+    if (isTRUE(calculate_se)) {
+        J <- NULL
+        model_terms <- delete.response(terms(model))
+        if (is.null(at)) {
+            model_frame <- model.frame(model_terms, data, na.action = na.pass, 
+                xlev = model$xlevels)
+            model_mat <- model.matrix(model_terms, model_frame, 
+                contrasts.arg = model$contrasts)
+            means_for_prediction <- colMeans(model_mat)
+            vc <- (means_for_prediction %*% vcov %*% means_for_prediction)[1L, 
+                1L, drop = TRUE]
+        }
+        else {
+            datalist <- build_datalist(data, at = at, as.data.frame = FALSE)
+            vc <- unlist(lapply(datalist, function(one) {
+                model_frame <- model.frame(model_terms, one, 
+                  na.action = na.pass, xlev = model$xlevels)
+                model_mat <- model.matrix(model_terms, model_frame, 
+                  contrasts.arg = model$contrasts)
+                means_for_prediction <- colMeans(model_mat)
+                means_for_prediction %*% vcov %*% means_for_prediction
+            }))
+        }
+    }
+    else {
+        J <- NULL
+        if (length(at)) {
+            vc <- rep(NA_real_, nrow(at_specification))
+        }
+        else {
+            vc <- NA_real_
+        }
+    }
+    structure(pred, class = c("prediction", "data.frame"), at = if (is.null(at)) 
+        at
+    else at_specification, type = type, call = if ("call" %in% 
+        names(model)) 
+        model[["call"]]
+    else NULL, model_class = class(model), row.names = seq_len(nrow(pred)), 
+        vcov = vc, jacobian = J, weighted = FALSE)
 }

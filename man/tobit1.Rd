@@ -8,7 +8,6 @@
 \alias{summary.tobit1}
 \alias{print.tobit1}
 \alias{print.summary.tobit1}
-\alias{predict.tobit1}
 \title{Truncated response model}
 \usage{
 tobit1(
@@ -41,8 +40,6 @@ tobit1(
   width = getOption("width"),
   ...
 )
-
-\method{predict}{tobit1}(object, newdata = NULL, what = c("expvalue", "prob", "linpred"), ...)
 }
 \arguments{
 \item{formula}{a symbolic description of the model; if two right
@@ -86,14 +83,6 @@ information about the optimization process is printed,}
 \item{x, object}{an object of class \code{tobit1} or \code{summary.tobit1},}
 
 \item{digits, width}{see \code{base::print},}
-
-\item{newdata}{a data set for which the predictions should be
-computed,}
-
-\item{what}{indicates what kind of predictions should be performed,
-one of \code{linpred} for the linear predictor, \code{expvalue} for the
-expected value and \code{prob} for the probability of geting an
-untruncated vale,}
 }
 \description{
 Estimation of models for which the response is truncated, either on

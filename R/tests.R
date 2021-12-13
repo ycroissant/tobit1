@@ -11,8 +11,8 @@
 #' @references
 #' \insertRef{HAUS:78}{tobit1}
 #' @examples
-#' library("tidyverse")
-#' charitable <- charitable %>% mutate(logdon = log(donation) - log(25))
+#' charitable <- dplyr::mutate(charitable,
+#'                             logdon = log(donation) - log(25))
 #' char_form <- logdon ~ log(donparents) + log(income) +
 #'     education + religion + married + south
 #' ml <- tobit1(char_form, data = charitable)
@@ -59,17 +59,16 @@ haustest <- function(x, y, omit = NULL){
 #' @references
 #' \insertRef{SMIT:BLUN:86}{tobit1}
 #' @examples
-#' library("tidyverse")
 #' library("Formula")
 #' inst <- ~ sic3 + k_serv + inv + engsci + whitecol + skill + semskill + cropland + 
 #'     pasture + forest + coal + petro + minerals + scrconc + bcrconc +
 #'     scrcomp + bcrcomp + meps + 
 #'     kstock + puni + geog2 + tenure + klratio + bunion
-#' tradeprotection <- tradeprotection %>%
-#'    mutate(y = ntb / (1 + ntb),
-#'           x1 = exports / imports / elast,
-#'           x2 = cap * x1)
-#' smbltest(as.Formula(y ~ x1 + x2 + labvar, inst), tradeprotection)
+#' tradeprotection <- dplyr::mutate(tradeprotection,
+#'                                  y  = ntb / (1 + ntb),
+#'                                  x1 = exports / imports / elast,
+#'                                  x2 = cap * x1)
+#' smbltest(Formula::as.Formula(y ~ x1 + x2 + labvar, inst), tradeprotection)
 #' @export
 smbltest <- function(formula, data){
     .data.name <- paste(deparse(substitute(formula)))

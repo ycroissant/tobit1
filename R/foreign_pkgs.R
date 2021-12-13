@@ -1,59 +1,3 @@
-#' Extract function to be used with the `texreg` package.
-#'
-#' This function is inspired by the ERGMitos package
-#'
-#' @name extract.tobit1
-#' @param model An object of class `ergmito`.
-#' @param include.logLik if `TRUE` the log-likelihood value is included
-#' @param include.nobs if `TRUE` the number of observations is included
-#' @param ... Further arguments 
-#' @importFrom methods setMethod
-#' @importFrom texreg extract
-#' @export
-extract.tobit1 <- function(model, include.logLik = TRUE, include.nobs = TRUE, ...){
-    s <- summary(model, ...)
-    names <- rownames(s$coef)
-    co <- s$coef[, 1]
-    se <- s$coef[, 2]
-    pval <- s$coef[, 4]
-    gof <- numeric()
-    gof.names <- character()
-    gof.decimal <- logical()
-    if (include.logLik == TRUE){
-        ll <- logLik(model)
-        gof <- c(gof, ll)
-        gof.names <- c(gof.names, "logLik")
-        gof.decimal <- c(gof.decimal, TRUE)
-    }
-    if (include.nobs == TRUE){
-        N <- nobs(model)
-        gof <- c(gof, N)
-        gof.names <- c(gof.names, "N")
-        gof.decimal <- c(gof.decimal, FALSE)
-    }
-    if (! is.null(model$status)){
-        Ns <- table(model$status)
-        gof <- c(gof, Ns["left-cens"], Ns["neg-linpred"], Ns["right-trimmed"])
-        gof.names <- c(gof.names, c("left_cens", "neg_linpred", "right_trimmed"))
-        gof.decimal <- c(gof.decimal, rep(FALSE, 3))
-    }
-
-    tr <- texreg::createTexreg(coef.names = names,
-                               coef = co,
-                               se = se,
-                               pvalues = pval,
-                               gof.names = gof.names,
-                               gof = gof,
-                               gof.decimal = gof.decimal)
-    return(tr)
-}
-
-methods::setMethod("extract",
-          signature = className("tobit1", "tobit1"),
-          definition = extract.tobit1)
-
-
-
 #' @importFrom prediction prediction
 #' @export
 prediction::prediction
@@ -112,6 +56,7 @@ make_data_frame <- function(...) {
 #' summary(margins(z, data = fees2, what = "prob"))
 #' @importFrom prediction prediction find_data build_datalist
 #' @importFrom stats na.pass
+#' @method prediction tobit1
 #' @export
 prediction.tobit1 <- function (model, data = find_data(model, parent.frame()), at = NULL, 
                                type = "response", vcov = stats::vcov(model), calculate_se = FALSE, 
@@ -188,4 +133,50 @@ prediction.tobit1 <- function (model, data = find_data(model, parent.frame()), a
         model[["call"]]
     else NULL, model_class = class(model), row.names = seq_len(nrow(pred)), 
         vcov = vc, jacobian = J, weighted = FALSE)
+}
+
+#' @importFrom generics glance
+#' @export
+generics::glance
+
+#' @importFrom generics tidy
+#' @export
+generics::tidy
+
+
+#' broom's methods
+#'
+#' Methods to compute extract in a tidy way the elements of a fitted
+#' model
+#'
+#' @name broom
+#' @param x a model fitted with mhurdle
+#' @param conf.int,conf.level current see `generics::tidy` (currently
+#'     unused)
+#' @param ... further arguments, currently unused
+#' @details `mhurdle` exports the `generics::tidy` and
+#'     `generics::glance` functions. The specific method provided for
+#'     `mhurdle` objects enables the use of some package that relies
+#'     on these functions (`modelsummary` for example)
+NULL
+
+#' @rdname broom
+#' @method tidy tobit1
+#' @export
+tidy.tobit1 <- function(x, conf.int = FALSE, conf.level = 0.95, ...){
+    result <- summary(x)$coefficients
+    nms <- rownames(result)
+    rownames(result) <- NULL
+    result <- data.frame(term = nms, result)
+    names(result) <- c("term", "estimate", "std.error", "statistic", "p.value")
+    result
+}
+
+#' @rdname broom
+#' @method glance tobit1
+#' @export
+glance.tobit1 <- function(x, ...){
+    N <- nobs(x)
+    logLik = logLik(x)
+    data.frame(nobs = N, logLik = logLik)
 }

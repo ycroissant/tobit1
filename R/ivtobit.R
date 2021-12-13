@@ -24,19 +24,17 @@
 #' \insertRef{SMIT:BLUN:86}{tobit1}
 #' @export
 #' @examples
-#' library("Formula")
-#' library("tidyverse")
 #' inst <- ~ sic3 + k_serv + inv + engsci + whitecol + skill + semskill + cropland + 
 #'     pasture + forest + coal + petro + minerals + scrconc + bcrconc + scrcomp + bcrcomp + meps + 
 #'     kstock + puni + geog2 + tenure + klratio + bunion
-#' tradeprotection <- tradeprotection %>%
-#'    mutate(y = ntb / (1 + ntb),
-#'           x1 = exports / imports / elast,
-#'           x2 = cap * x1)
-#' GH <- ivtobit(as.Formula(y  ~  x1 + x2, inst), tradeprotection, method = "2steps") 
-#' Full <- ivtobit(as.Formula(y ~ x1 + x2 + labvar, inst), tradeprotection, method = "2steps") 
-#' Short <- ivtobit(as.Formula(y ~ x1 + I(x2 + labvar), inst), tradeprotection, method = "2steps") 
-#' texreg::screenreg(list(GH = GH, Full = Full, Short = Short), digits = 4) %>% print 
+#' tradeprotection <- dplyr::mutate(tradeprotection,
+#'                                  y = ntb / (1 + ntb),
+#'                                  x1 = exports / imports / elast,
+#'                                  x2 = cap * x1)
+#' GH <- ivtobit(Formula::as.Formula(y  ~  x1 + x2, inst), tradeprotection, method = "2steps") 
+#' Full <- ivtobit(Formula::as.Formula(y ~ x1 + x2 + labvar, inst), tradeprotection, method = "2steps") 
+#' Short <- ivtobit(Formula::as.Formula(y ~ x1 + I(x2 + labvar), inst),
+#'                  tradeprotection, method = "2steps") 
 ivtobit <- function(formula, data, subset = NULL, left = 0, right = Inf, method = c("ml", "2steps"), robust = TRUE, trace = 0){
     .call <- match.call(expand.dots = TRUE)
     .call$formula <- .formula <- Formula(formula)
@@ -94,7 +92,6 @@ ivtobit <- function(formula, data, subset = NULL, left = 0, right = Inf, method 
         if (robust) result$vcov <- solve(UAU) + delta * Q
     }
     else{
-        cat("ml estimation\n")
         PI2 <- coef(first)
         pi2 <- as.numeric(PI2)
         if (ncol(W) > 1)

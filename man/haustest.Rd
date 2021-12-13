@@ -17,8 +17,8 @@ haustest(x, y, omit = NULL)
 Hausman test
 }
 \examples{
-library("tidyverse")
-charitable <- charitable \%>\% mutate(logdon = log(donation) - log(25))
+charitable <- dplyr::mutate(charitable,
+                            logdon = log(donation) - log(25))
 char_form <- logdon ~ log(donparents) + log(income) +
     education + religion + married + south
 ml <- tobit1(char_form, data = charitable)

@@ -108,7 +108,7 @@ NULL
 #' - klratio Capital-labor ratio
 #' - bunion bla
 #' @description 194 industrial sectors in the US
-#' @source American Economic Association Data Archive : \url{http://aeaweb.org/aer/}
+#' @source American Economic Association Data Archive : \url{https://aeaweb.org/aer/}
 #' @references
 #' \insertRef{MATS:SHER:06}{tobit1}
 #' @importFrom Rdpack reprompt

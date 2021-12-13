@@ -16,17 +16,16 @@ second part}
 Test for Exogeneity in Tobit models
 }
 \examples{
-library("tidyverse")
 library("Formula")
 inst <- ~ sic3 + k_serv + inv + engsci + whitecol + skill + semskill + cropland + 
     pasture + forest + coal + petro + minerals + scrconc + bcrconc +
     scrcomp + bcrcomp + meps + 
     kstock + puni + geog2 + tenure + klratio + bunion
-tradeprotection <- tradeprotection \%>\%
-   mutate(y = ntb / (1 + ntb),
-          x1 = exports / imports / elast,
-          x2 = cap * x1)
-smbltest(as.Formula(y ~ x1 + x2 + labvar, inst), tradeprotection)
+tradeprotection <- dplyr::mutate(tradeprotection,
+                                 y  = ntb / (1 + ntb),
+                                 x1 = exports / imports / elast,
+                                 x2 = cap * x1)
+smbltest(Formula::as.Formula(y ~ x1 + x2 + labvar, inst), tradeprotection)
 }
 \references{
 \insertRef{SMIT:BLUN:86}{tobit1}

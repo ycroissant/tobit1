@@ -5,6 +5,8 @@
 \alias{reexports}
 \alias{prediction}
 \alias{margins}
+\alias{glance}
+\alias{tidy}
 \title{Objects exported from other packages}
 \keyword{internal}
 \description{
@@ -12,6 +14,8 @@ These objects are imported from other packages. Follow the links
 below to see their documentation.
 
 \describe{
+  \item{generics}{\code{\link[generics]{glance}}, \code{\link[generics]{tidy}}}
+
   \item{margins}{\code{\link[margins]{margins}}}
 
   \item{prediction}{\code{\link[prediction]{prediction}}}

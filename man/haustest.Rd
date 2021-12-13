@@ -13,6 +13,17 @@ haustest(x, y, omit = NULL)
 
 \item{omit}{a character containing the effects that are removed from the test}
 }
+\value{
+a list with class \code{'htest'} containing the following components:
+\itemize{
+\item data.mane: a character string describing the fitted model
+\item statistic: the value of the test statistic
+\item parameter: degrees of freedom
+\item p.value: the p.value of the test
+\item method: a character indicating what type of test is performed
+\item alternative: a character indicating the alternative hypothesis
+}
+}
 \description{
 Hausman test
 }
@@ -31,3 +42,4 @@ haustest(scls, ml, omit = "(Intercept)")
 \author{
 Yves Croissant
 }
+\keyword{htest}

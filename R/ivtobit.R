@@ -19,6 +19,8 @@
 #' @importFrom Formula Formula
 #' @importFrom stats coef dnorm lm model.matrix model.response pnorm
 #'     fitted model.frame residuals optim
+#' @return
+#' An object of class `c('tobit1', 'lm')`, see `tobit1::tobit1` for more details. 
 #' @author Yves Croissant
 #' @references
 #' \insertRef{SMIT:BLUN:86}{tobit1}

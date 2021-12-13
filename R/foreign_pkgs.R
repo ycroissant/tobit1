@@ -37,6 +37,11 @@ make_data_frame <- function(...) {
 #'     predictions. `margins` compute the average marginal effect of
 #'     every covariate. It uses the numerical derivatives of the
 #'     predictions using the `prediction` function.
+#' @return `prediction` returns a data frame which is a data frame
+#'     containging the values of the covariates used for the
+#'     predictions augmented by the predicted values. `margins` return
+#'     an object of class `c('margins', 'data.frame')` which is data
+#'     frame containg the the marginal effects.
 #' @examples
 #' data("feesadm", package = "tobit1")
 #' z <- tobit1(fees ~ expense + I(expense ^ 2) + region, feesadm)
@@ -158,6 +163,10 @@ generics::tidy
 #'     `generics::glance` functions. The specific method provided for
 #'     `mhurdle` objects enables the use of some package that relies
 #'     on these functions (`modelsummary` for example)
+#' @return `tidy ` returns a data frame containing the estimates,
+#'     their standard errors, the Student statistic and the
+#'     p-value. `glance` returns a one line data frame containg
+#'     goodness of fit measures.
 NULL
 
 #' @rdname broom

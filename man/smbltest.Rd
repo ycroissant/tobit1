@@ -12,6 +12,17 @@ second part}
 
 \item{data}{a data.frame}
 }
+\value{
+a list with class \code{'htest'} containing the following components:
+\itemize{
+\item data.mane: a character string describing the fitted model
+\item statistic: the value of the test statistic
+\item parameter: degrees of freedom
+\item p.value: the p.value of the test
+\item method: a character indicating what type of test is performed
+\item alternative: a character indicating the alternative hypothesis
+}
+}
 \description{
 Test for Exogeneity in Tobit models
 }
@@ -33,3 +44,4 @@ smbltest(Formula::as.Formula(y ~ x1 + x2 + labvar, inst), tradeprotection)
 \author{
 Yves Croissant
 }
+\keyword{htest}

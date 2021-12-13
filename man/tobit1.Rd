@@ -84,6 +84,25 @@ information about the optimization process is printed,}
 
 \item{digits, width}{see \code{base::print},}
 }
+\value{
+An object of class \code{c('tobit1', 'lm')}, which is a list containg the following components:
+\itemize{
+\item coefficients: a named vector of coefficients,
+\item linear.predictor: the linear fit,
+\item fitted.values: the fitted values,
+\item residuals: the residuals,
+\item df.residual: the residual degrees of freedom,
+\item hessian: the hessian of the log-likelihood function at the optimum,
+\item vcov: an estimator of the covariance matrix of the coefficients,
+\item gradObs: a N x K matrix containing the individual contributions to the gradient,
+\item logLik: the value of the log-likelihood at the optimum,
+\item model: the model frame,
+\item terms: the terms object used,
+\item call: the matched call
+\item xlevels: a record of the levels of the factors used in fitting
+\item na.action: intormation returned by \code{model.frame} on the special handling of \code{NA}'s.
+}
+}
 \description{
 Estimation of models for which the response is truncated, either on
 censored or truncated samples using linear models, maximum

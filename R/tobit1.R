@@ -40,6 +40,23 @@
 #'     model.frame printCoefmat residuals terms vcov nobs
 #'     model.weights .getXlevels predict delete.response predict
 #'     update
+#' @return
+#' An object of class `c('tobit1', 'lm')`, which is a list containg the following components:
+#' - coefficients: a named vector of coefficients,
+#' - linear.predictor: the linear fit,
+#' - fitted.values: the fitted values,
+#' - residuals: the residuals,
+#' - df.residual: the residual degrees of freedom,
+#' - hessian: the hessian of the log-likelihood function at the optimum,
+#' - vcov: an estimator of the covariance matrix of the coefficients,
+#' - gradObs: a N x K matrix containing the individual contributions to the gradient,
+#' - logLik: the value of the log-likelihood at the optimum,
+#' - model: the model frame,
+#' - terms: the terms object used,
+#' - call: the matched call
+#' - xlevels: a record of the levels of the factors used in fitting
+#' - na.action: intormation returned by `model.frame` on the special handling of `NA`'s.
+#' 
 #' @author Yves Croissant
 #' @examples
 #' # tobit model estimated by maximum likelihood

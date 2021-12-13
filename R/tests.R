@@ -6,6 +6,14 @@
 #' @param x the first model,
 #' @param y the second model
 #' @param omit a character containing the effects that are removed from the test
+#' @return a list with class `'htest'` containing the following components:
+#' - data.mane: a character string describing the fitted model
+#' - statistic: the value of the test statistic
+#' - parameter: degrees of freedom
+#' - p.value: the p.value of the test
+#' - method: a character indicating what type of test is performed
+#' - alternative: a character indicating the alternative hypothesis
+#' @keywords htest
 #' @author Yves Croissant
 #' @importFrom stats pchisq
 #' @references
@@ -55,6 +63,14 @@ haustest <- function(x, y, omit = NULL){
 #'     second part
 #' @param data a data.frame
 #' @author Yves Croissant
+#' @return a list with class `'htest'` containing the following components:
+#' - data.mane: a character string describing the fitted model
+#' - statistic: the value of the test statistic
+#' - parameter: degrees of freedom
+#' - p.value: the p.value of the test
+#' - method: a character indicating what type of test is performed
+#' - alternative: a character indicating the alternative hypothesis
+#' @keywords htest
 #' @importFrom stats pchisq
 #' @references
 #' \insertRef{SMIT:BLUN:86}{tobit1}

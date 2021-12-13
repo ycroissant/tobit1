@@ -35,6 +35,9 @@ covariance of the coefficients is used for the 2-steps method,}
 \item{trace}{a boolean (the default if \code{FALSE}) if \code{TRUE} some
 information about the optimization process is printed,}
 }
+\value{
+An object of class \code{c('tobit1', 'lm')}, see \code{tobit1::tobit1} for more details.
+}
 \description{
 Estimation of simultaneous-equation models when the response is
 trunctaed

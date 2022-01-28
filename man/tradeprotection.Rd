@@ -39,7 +39,7 @@ a tibble containing:
 }
 }
 \source{
-American Economic Association Data Archive : \url{https://aeaweb.org/aer/}
+American Economic Association Data Archive : \url{https://www.aeaweb.org/aer/}
 }
 \description{
 194 industrial sectors in the US

@@ -1,6 +1,6 @@
 Package: tobit1
-Version: 0.1-1
-Date: 2021-12-13
+Version: 0.1-2
+Date: 2022-01-25
 Title: One Equation Tobit Model
 Authors@R: person("Yves",
                   "Croissant",

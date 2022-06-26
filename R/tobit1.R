@@ -34,6 +34,12 @@
 #' @param x,object an object of class `tobit1` or `summary.tobit1`,
 #' @param digits,width see `base::print`,
 #' @param ... further arguments.
+#' @param newdata a new data frame for which the predict method should
+#'     compute the predictions
+#' @param what for the predict method, the kind of predictions, can be
+#'     the probabilities (`prob`), the linear predictor (`linpred`)
+#'     and the expected value of the response (`expvalue`)
+
 #' @importFrom tibble tibble
 #' @importFrom stats binomial coef dnorm glm lm model.matrix
 #'     model.response pnorm sigma df.residual fitted logLik
@@ -419,12 +425,12 @@ print.summary.tobit1 <- function (x, digits = max(3, getOption("digits") - 2), w
 }
 
 
-#' @rdname prediction_margins
+#' @rdname tobit1
 #' @export
 predict.tobit1 <- function(object, newdata = NULL,
                            what = c("expvalue", "prob", "linpred"), ...){
     if (is.null(newdata)) newdata <- model.frame(object)
-    what <- match.arg(what)
+    type <- match.arg(what)
     K <- length(coef(object)) - 1
     mt <- delete.response(object$terms)
     mf <- model.frame(mt, newdata, xlev = object$xlevels)
@@ -432,8 +438,8 @@ predict.tobit1 <- function(object, newdata = NULL,
     beta <- object$coefficients[1:K]
     x <- drop(X %*% beta)
     sig <- object$coefficients[K + 1]
-    if (what == "expvalue") x <- x + sig * mills(x / sig)
-    if (what == "prob") x <- pnorm(x / sig)
+    if (type == "expvalue") x <- x + sig * mills(x / sig)
+    if (type == "prob") x <- pnorm(x / sig)
     return(x)
 }
 

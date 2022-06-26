@@ -8,6 +8,7 @@
 \alias{summary.tobit1}
 \alias{print.tobit1}
 \alias{print.summary.tobit1}
+\alias{predict.tobit1}
 \title{Truncated response model}
 \usage{
 tobit1(
@@ -40,6 +41,8 @@ tobit1(
   width = getOption("width"),
   ...
 )
+
+\method{predict}{tobit1}(object, newdata = NULL, what = c("expvalue", "prob", "linpred"), ...)
 }
 \arguments{
 \item{formula}{a symbolic description of the model; if two right
@@ -83,6 +86,13 @@ information about the optimization process is printed,}
 \item{x, object}{an object of class \code{tobit1} or \code{summary.tobit1},}
 
 \item{digits, width}{see \code{base::print},}
+
+\item{newdata}{a new data frame for which the predict method should
+compute the predictions}
+
+\item{what}{for the predict method, the kind of predictions, can be
+the probabilities (\code{prob}), the linear predictor (\code{linpred})
+and the expected value of the response (\code{expvalue})}
 }
 \value{
 An object of class \code{c('tobit1', 'lm')}, which is a list containg the following components:

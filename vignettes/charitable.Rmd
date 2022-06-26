@@ -25,7 +25,6 @@ options(knitr.table.format = "latex", knitr.booktabs = TRUE)
 
 ```{r }
 library("tobit1")
-library("dplyr")
 ```
 
 ```{r }
@@ -51,7 +50,7 @@ a small donation.
 
 
 ```{r }
-charitable <- charitable %>% mutate(logdon = log(donation) - log(25))
+charitable$logdon <- with(charitable, log(donation) - log(25))
 ```
 
 The tobit model can be estimated by maximum likelihood using
@@ -114,46 +113,56 @@ Hausman test:
 haustest(scls, ml, omit = "(Intercept)")
 ```
 
-<!-- Specification tests for the maximum likelihood can also be conducted -->
-<!-- using conditional moments tests. This can easily be done using the -->
-<!-- `cmtest::cmtest` function, which can take as input a model fitted by -->
-<!-- either `AER::tobit`, `censReg::censReg` or `tobit1::tobit1`: -->
+Specification tests for the maximum likelihood can also be conducted
+using conditional moments tests. This can easily be done using the
+`cmtest::cmtest` function, which can take as input a model fitted by
+either `AER::tobit`, `censReg::censReg` or `tobit1::tobit1`:
 
 
-<!-- ```{r } -->
-<!-- library("cmtest") -->
-<!-- cmtest(ml) -->
-<!-- ``` -->
+```{r }
+if (requireNamespace("modelsummary")){
+    library("cmtest")
+    cmtest(ml)
+}
+```
 
-<!-- ```{r include = FALSE} -->
-<!-- cmtest(ml_aer) -->
-<!-- cmtest(ml_creg) -->
-<!-- ``` -->
+```{r include = FALSE}
+if (requireNamespace("modelsummary")){
+    cmtest(ml_aer)
+    cmtest(ml_creg)
+}
+```
 
-<!-- `cmtest` has a `test` argument with default value equal to -->
-<!-- `normality`. To get a heteroscedasticity test, we would use: -->
+`cmtest` has a `test` argument with default value equal to
+`normality`. To get a heteroscedasticity test, we would use:
 
-<!-- ```{r } -->
-<!-- cmtest(ml, test = "heterosc") -->
-<!-- ``` -->
-<!-- Normality and heteroscedasticity are strongly rejected. The values are -->
-<!-- different from @WILH:08 as he used the "outer product of the gradient" -->
-<!-- form of the test. These versions of the test can be obtained by -->
-<!-- setting the `OPG` argument to `TRUE`. -->
+```{r }
+if (requireNamespace("modelsummary")){
+    cmtest(ml, test = "heterosc")
+}
+```
+Normality and heteroscedasticity are strongly rejected. The values are
+different from @WILH:08 as he used the "outer product of the gradient"
+form of the test. These versions of the test can be obtained by
+setting the `OPG` argument to `TRUE`.
 
-<!-- ```{r } -->
-<!-- cmtest(ml, test = "normality", OPG = TRUE) -->
-<!-- cmtest(ml, test = "heterosc", OPG = TRUE) -->
-<!-- ``` -->
+```{r }
+if (requireNamespace("modelsummary")){
+    cmtest(ml, test = "normality", OPG = TRUE)
+    cmtest(ml, test = "heterosc", OPG = TRUE)
+}
+```
 
-<!-- Non-normality can be further investigate by testing separately -->
-<!-- the fact that the skewness and kurtosis indicators are respectively -->
-<!-- different from 0 and 3. -->
+Non-normality can be further investigate by testing separately
+the fact that the skewness and kurtosis indicators are respectively
+different from 0 and 3.
 
-<!-- ```{r } -->
-<!-- cmtest(ml, test = "skewness") -->
-<!-- cmtest(ml, test = "kurtosis") -->
-<!-- ``` -->
+```{r }
+if (requireNamespace("modelsummary")){
+    cmtest(ml, test = "skewness")
+    cmtest(ml, test = "kurtosis")
+}
+```
 
 The hypothesis that the conditional distribution of the response is
 mesokurtic is not rejected at the 1% level and the main problem seems
@@ -176,7 +185,5 @@ if (requireNamespace("ggplot2") & requireNamespace("dplyr")){
         labs(x = "log of charitable giving", y = NULL)
 }
 ```
-
-
 
 # References

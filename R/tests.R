@@ -19,8 +19,9 @@
 #' @references
 #' \insertRef{HAUS:78}{tobit1}
 #' @examples
-#' charitable <- dplyr::mutate(charitable,
-#'                             logdon = log(donation) - log(25))
+#' #charitable <- dplyr::mutate(charitable,
+#' #                            logdon = log(donation) - log(25))
+#' charitable$logdon <- with(charitable, log(donation) - log(25))
 #' char_form <- logdon ~ log(donparents) + log(income) +
 #'     education + religion + married + south
 #' ml <- tobit1(char_form, data = charitable)
@@ -80,10 +81,13 @@ haustest <- function(x, y, omit = NULL){
 #'     pasture + forest + coal + petro + minerals + scrconc + bcrconc +
 #'     scrcomp + bcrcomp + meps + 
 #'     kstock + puni + geog2 + tenure + klratio + bunion
-#' tradeprotection <- dplyr::mutate(tradeprotection,
-#'                                  y  = ntb / (1 + ntb),
-#'                                  x1 = exports / imports / elast,
-#'                                  x2 = cap * x1)
+#' #tradeprotection <- dplyr::mutate(tradeprotection,
+#' #                                 y  = ntb / (1 + ntb),
+#' #                                 x1 = exports / imports / elast,
+#' #                                 x2 = cap * x1)
+#' tradeprotection$y <- with(tradeprotection, ntb / (1 + ntb))
+#' tradeprotection$x1 <- with(tradeprotection, exports / imports/ elast)
+#' tradeprotection$x2 <- with(tradeprotection, cap * x1)
 #' smbltest(Formula::as.Formula(y ~ x1 + x2 + labvar, inst), tradeprotection)
 #' @export
 smbltest <- function(formula, data){

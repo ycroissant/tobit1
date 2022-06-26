@@ -1,6 +1,6 @@
 Package: tobit1
-Version: 0.1-2
-Date: 2022-01-25
+Version: 0.1-4
+Date: 2022-06-26
 Title: One Equation Tobit Model
 Authors@R: person("Yves",
                   "Croissant",
@@ -8,8 +8,8 @@ Authors@R: person("Yves",
 		  email = "yves.croissant@univ-reunion.fr",
 		  comment = c(ORCID = "0000-0002-4857-7736"))
 Depends: R (>= 4.0.0)
-Imports: numDeriv, tibble, Rdpack, Formula, prediction, margins, generics
-Suggests: knitr, rmarkdown, testthat, AER, censReg, dplyr, ggplot2, modelsummary, bookdown
+Imports: numDeriv, tibble, Rdpack, Formula, generics
+Suggests: knitr, rmarkdown, testthat, AER, censReg, dplyr, ggplot2, modelsummary, bookdown, cmtest
 Description: A set of estimators and tests for models for which the
 	     response is truncated. The package includes a lot of
 	     developments following the seminal paper of Tobin (1958)

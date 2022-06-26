@@ -29,10 +29,13 @@
 #' inst <- ~ sic3 + k_serv + inv + engsci + whitecol + skill + semskill + cropland + 
 #'     pasture + forest + coal + petro + minerals + scrconc + bcrconc + scrcomp + bcrcomp + meps + 
 #'     kstock + puni + geog2 + tenure + klratio + bunion
-#' tradeprotection <- dplyr::mutate(tradeprotection,
-#'                                  y = ntb / (1 + ntb),
-#'                                  x1 = exports / imports / elast,
-#'                                  x2 = cap * x1)
+#' #tradeprotection <- dplyr::mutate(tradeprotection,
+#' #                                 y = ntb / (1 + ntb),
+#' #                                 x1 = exports / imports / elast,
+#' #                                 x2 = cap * x1)
+#' tradeprotection$y <- with(tradeprotection, ntb / (1 + ntb))
+#' tradeprotection$x1 <- with(tradeprotection, exports / imports/ elast)
+#' tradeprotection$x2 <- with(tradeprotection, cap * x1)
 #' GH <- ivtobit(Formula::as.Formula(y  ~  x1 + x2, inst), tradeprotection, method = "2steps") 
 #' Full <- ivtobit(Formula::as.Formula(y ~ x1 + x2 + labvar, inst), tradeprotection, method = "2steps") 
 #' Short <- ivtobit(Formula::as.Formula(y ~ x1 + I(x2 + labvar), inst),

@@ -28,8 +28,9 @@ a list with class \code{'htest'} containing the following components:
 Hausman test
 }
 \examples{
-charitable <- dplyr::mutate(charitable,
-                            logdon = log(donation) - log(25))
+#charitable <- dplyr::mutate(charitable,
+#                            logdon = log(donation) - log(25))
+charitable$logdon <- with(charitable, log(donation) - log(25))
 char_form <- logdon ~ log(donparents) + log(income) +
     education + religion + married + south
 ml <- tobit1(char_form, data = charitable)

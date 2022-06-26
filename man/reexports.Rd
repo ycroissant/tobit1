@@ -3,8 +3,6 @@
 \docType{import}
 \name{reexports}
 \alias{reexports}
-\alias{prediction}
-\alias{margins}
 \alias{glance}
 \alias{tidy}
 \title{Objects exported from other packages}
@@ -15,9 +13,5 @@ below to see their documentation.
 
 \describe{
   \item{generics}{\code{\link[generics]{glance}}, \code{\link[generics]{tidy}}}
-
-  \item{margins}{\code{\link[margins]{margins}}}
-
-  \item{prediction}{\code{\link[prediction]{prediction}}}
 }}
 
